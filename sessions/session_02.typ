@@ -49,7 +49,7 @@
   - La *direction* du vecteur position peut être donnée par l'angle $theta$ qu'il forme avec l'axe $x$, où $tan(theta) = y/x$.
 
   #figure(
-    image("images/vecteurs_03.svg", width: 80%),
+    image("../images/vecteurs_03.svg", width: 80%),
     caption: [Plan 2D avec vecteurs position et vitesse],
   )
 
@@ -63,13 +63,13 @@
   - Visualisation de différentes trajectoires et des vecteurs position correspondants à différents instants.
 
 - *Démo cinématique :* Pour visualiser les concepts de cinématique, consultez la démo : #link("../scenes/session02.html")[file:../scenes/session02.html]
-
+ 
 === 3. Vitesse en 2D 
 
 - *Vitesse Moyenne :*
 
   #figure(
-    image("images/vitesse_moyenne.svg", width: 80%),
+    image("../images/vitesse_moyenne.svg", width: 80%),
     caption: [Plan 2D avec vecteurs position et vitesse],
   )
 
