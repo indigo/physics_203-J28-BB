@@ -33,23 +33,27 @@
 //#columns(2, gutter: 1em)[
 
 #section-box("Définitions et Notation")[
+    *Définition :*
+    
+    Un vecteur est une grandeur ayant une direction et une magnitude.
+    
+    Un vecteur est un objet de l'espace.
+    On dit qu'il est de dimension $n$ si il a $n$ composantes. 
+    
+    Dans le plan, $n = 2$.
+
     *Notation vectorielle :*
-    On utilise `arrow(v)` pour la flèche.
-    
     $ arrow(v) = vec(v_x, v_y) = v_x arrow(i) + v_y arrow(j) $
-    
+
+    *Example :*
+    $ arrow(A B) = vec(6, -3) = 6 arrow(i) - 3 arrow(j) $
+
     *Déplacement :*
     Vecteur reliant le point $A$ au point $B$ :
     $ arrow(A B) = vec(x_B - x_A, y_B - y_A) $
   ]
 
-#figure(
-image("vecteurs_01.svg", width: 80%),
-  caption: [
-    Le vecteur A (rouge) et le vecteur B (bleu)
-  ],
-)
-  
+
   #v(1em)
 
   #section-box("Norme (Grandeur)")[
@@ -74,7 +78,15 @@ image("vecteurs_01.svg", width: 80%),
     
     *Soustraction :*
     $ arrow(u) - arrow(v) = vec(u_x - v_x, u_y - v_y) $
-    
+
+#figure(
+image("../images/vecteurs_01.svg", width: 80%),
+  caption: [
+    Le vecteur $arrow(u)$ (rouge) et le vecteur $arrow(v)$ (bleu)
+  ],
+)
+  
+
     *Multiplication par scalaire ($k$) :*
     $ k dot arrow(u) = vec(k u_x, k u_y) $
   ]
@@ -130,7 +142,7 @@ image("vecteurs_01.svg", width: 80%),
   ]
 
 #figure(
-image("vecteurs_02.svg", width: 80%),
+image("../images/vecteurs_02.svg", width: 80%),
   caption: [
     Produit scalaire, projection
   ],
