@@ -100,7 +100,7 @@
   - La *magnitude* de la vitesse instantanée, $|arrow(v)(t)| = sqrt(v_x(t)^2 + v_y(t)^2)$, est appelée *vitesse scalaire*.
   - La *direction* de la vitesse instantanée est tangente à la trajectoire de l'objet au point considéré. Visualisation de ce concept avec des exemples de trajectoires courbes.
 
-*Exemples par type de trajectoire :*
+*Application aux différents types de trajectoire :*
 
 *1. Mouvement rectiligne uniforme :*
   - Pour $arrow(r)(t) = vec(x_0 + v_x t, y_0 + v_y t)$, la vitesse instantanée est :
@@ -157,24 +157,31 @@
 
     C'est ce cas particulier qui sera crucial pour l'étude du mouvement de projectile sous l'effet de la gravité.
 
-*Exemples par type de trajectoire :*
+*Exemples complet par type de trajectoire :*
 
-*1. Mouvement rectiligne :*
+Nous pouvons maintenant reprendre nos 3 exemples et finaliser notre étude de leurs mouvements.
 
-  - *Uniforme* : 
-  Pour 
-  $
-  arrow(v)(t) = vec(v_x, v_y)$ constante, 
-  
-  $arrow(a)(t) = vec(0, 0)$. 
-  
-  Aucune accélération n'est nécessaire pour maintenir le mouvement rectiligne uniforme.
-
-
-
-*2. Mouvement circulaire uniforme :*
+*1. Mouvement rectiligne uniforme:*
 
   *Position :*
+$ arrow(r)(t) = vec(x_0 + v_x t, y_0 + v_y t) $
+    où $x_0$ et $y_0$ sont les positions initiales, et $v_x$ et $v_y$ sont les vitesses initiales.
+
+  *Vitesse (dérivée de la position) :*
+$ arrow(v)(t) = vec(v_x, v_y) $
+  
+    *Accélération (dérivée de la vitesse) :*
+  $ arrow(a)(t) = vec(0, 0) $
+  
+  La dérivée d'un vecteur constant est nulle. Aucune accélération n'est nécessaire pour maintenir le mouvement rectiligne uniforme.
+
+
+
+== *2. Mouvement circulaire uniforme :*
+
+  *Position :*
+  
+
 
   - À l'instant $t$, le vecteur position est :
   $
@@ -202,7 +209,10 @@
   arrow(a)(t) = -omega^2 vec(R cos(omega t), R sin(omega t)) = -omega^2 arrow(r)(t)
   $
 L'accélération est constante et bien dirigée vers le centre du cercle.
-
+  #figure(
+    image("../images/circulaire 1.svg", width: 80%),
+    caption: [Le mouvement circulaire uniforme],
+  )
 *3. Mouvement parabolique (projectile) :*
 - L'équation de la trajectoire est :
   $
@@ -212,4 +222,5 @@ L'accélération est constante et bien dirigée vers le centre du cercle.
   $
   arrow(a)(t) = vec(0, -g)
   $
-  - L'accélération est *constante* et dirigée verticalement vers le bas. Avec $g = 9.81$ m/s², quel que soit l'instant $t$, $arrow(a) = vec(0, -9.81)$ m/s². Cette accélération change uniquement la composante verticale de la vitesse. La composante horizontale reste inchangée.
+  - L'accélération est *constante* et dirigée verticalement vers le bas. 
+  Avec $g = 9.81$ m/s², quel que soit l'instant $t$, $arrow(a) = vec(0, -9.81)$ m/s². Cette accélération change uniquement la composante verticale de la vitesse. La composante horizontale reste inchangée.

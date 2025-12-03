@@ -7,8 +7,12 @@ _Ou "Comment programmer l'univers"_
 
 Isaac Newton n'a jamais codé en JavaScript, mais sans lui, aucun jeu vidéo moderne n'existerait. Ses trois lois sont les règles fondamentales du moteur physique que nous allons construire.
 
+Les lois de Newton sont des lois mathématiques qui décrivent comment les objets se déplacent et se comportent sous l'effet des forces. Elles nous permettent de donner un comportement réaliste à nos objets dans le jeu.
+
+En physique, on crée des modèles, en se basant sur nos observations, puis on confronte ces modèles à la réalité, pour valider ou invalider ces modèles. À aucun moment les physiciens prétentent que leurs modèles sont exactes, mais une loi est utile à partir du moment ou aucune expérience ne peut prouver qu'elle est fausse.
+
 == 1. La Première Loi : L'Inertie
-_Le principe de la "Flemme"_
+_Le principe du statu quo_
 
 #box(fill: luma(245), stroke: 1pt + gray, inset: 1em, radius: 5pt, width: 100%)[
   *La Loi :* Un objet au repos reste au repos, et un objet en mouvement continue en ligne droite à vitesse constante, *sauf* si une force extérieure agit sur lui.
