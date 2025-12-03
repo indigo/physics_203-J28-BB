@@ -108,3 +108,15 @@ On ne peut pas toucher sans être touché. Si vous poussez un mur, le mur vous p
   ),
   caption: [Aide-mémoire des lois de Newton]
 )
+
+= Annexe : Pourquoi des objets de masses différentes tombent-ils avec la même vitesse ?
+
+La force qui agit sur un objet est la force de gravité, qui est proportionnelle à la masse de l'objet.
+
+$ arrow(F)_(g) = m g $
+
+Or, l'accélération est proportionnelle à la force:
+
+$ arrow(a) = arrow(F) / m $
+
+Donc, l'accélération est inversement proportionnelle à la masse.
