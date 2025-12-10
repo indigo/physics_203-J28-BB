@@ -66,7 +66,9 @@
   $ j = -(1+e) dot v_"rel" dot ((m_A m_B) / (m_A + m_B)) $
   
   - $e$ : Coefficient de restitution (1 = Élastique, 0 = Mou).
-  - $v_"rel"$ : Vitesse relative de rapprochement ($ (arrow(v)_A - arrow(v)_B) dot arrow(n) $).
+  - $v_"rel"$ : Vitesse relative de rapprochement 
+  
+  $ (arrow(v)_A - arrow(v)_B) dot arrow(n) $.
   
   *Application (Action-Réaction) :*
   $ arrow(v)'_A = arrow(v)_A + (j / m_A) arrow(n) $
