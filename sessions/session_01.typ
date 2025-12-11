@@ -160,7 +160,9 @@ Un déplacement peut se décrire par le vecteur reliant le point $A$ (départ) a
     *Formule géométrique :*
     $ arrow(u) dot arrow(v) = ||arrow(u)|| dot ||arrow(v)|| dot cos(theta) $
     
-    Si $arrow(u) dot arrow(v) = 0$, alors $arrow(u) perp arrow(v)$.
+    + Si $arrow(u) dot arrow(v) = 0$, alors $arrow(u) perp arrow(v)$.
+    + Si $arrow(u) dot arrow(v) > 0$, alors l'angle entre les vecteurs est inférieur à 90°. (devant)
+    + Si $arrow(u) dot arrow(v) < 0$, alors l'angle entre les vecteurs est supérieur à 90°. (derrière)
   ]
 
   #v(1em)
@@ -175,25 +177,17 @@ Un déplacement peut se décrire par le vecteur reliant le point $A$ (départ) a
 
   #v(1em)
 
-  #definition-box(title: "Produit Vectoriel (3D)")[
-    Résultat : un *vecteur* perpendiculaire.
-    
-    $ arrow(w) = arrow(u) times arrow(v) $
-    
-    *Magnitude :*
-    $ ||arrow(u) times arrow(v)|| = ||arrow(u)|| dot ||arrow(v)|| dot sin(theta) $
-    
-    *Calcul (Déterminant) :*
-    Notez les flèches sur $i, j, k$ :
-    
-    $ arrow(u) times arrow(v) = det(mat(arrow(i), arrow(j), arrow(k); u_x, u_y, u_z; v_x, v_y, v_z)) $
-  ]
-  
+
   #definition-box(title: "Projections")[
     Projection de $arrow(u)$ sur $arrow(v)$.
-    
+    On utilise le produit scalaire, dans la direction sur laquelle on projette.
     
     $ "proj"_v (arrow(u)) = ( (arrow(u) dot arrow(v)) / (||arrow(v)||^2) ) dot arrow(v) $
+
+Et si $arrow(v)$ est normalisé (direction de la droite sur laquelle on projète), on peut simplifier :
+
+$ "proj"_v (arrow(u)) = (arrow(u) dot arrow(v)) dot arrow(v) $
+
 
     #figure(
 image("../images/vecteurs_02.svg", width: 70%),
@@ -203,7 +197,51 @@ image("../images/vecteurs_02.svg", width: 70%),
 )
   ]
 
+  #definition-box(title: "Produit Vectoriel (3D)")[
+    Résultat : un *vecteur* perpendiculaire.
+    
+    $ arrow(w) = arrow(a) times arrow(b) $
+    
+    *Commutativité :* 
+    
+    Attention, le produit vectoriel n'est pas commutatif ! On a un changement de signe :
+    $ arrow(a) times arrow(b) = - arrow(b) times arrow(a) $
 
+
+    *Magnitude :*
+    $ ||arrow(a) times arrow(b)|| = ||arrow(a)|| dot ||arrow(b)|| dot sin(theta) $
+    
+
+  *Direction :* 
+
+  Le produit vectoriel est perpendiculaire aux deux vecteurs :
+  $ a times b perp a $
+  $ a times b perp b $
+
+On utilise la rêgle de la main droite pour trouver la direction du produit vectoriel. 
+- Le pouce pointe sur a
+- l'index sur b
+- le majeur sur $a times b$.
+
+*Calcul (Déterminant) :*
+
+    Le déterminant est un outil algébrique qui permet de trouver les solutions d'un problème de n équations avec n inconnues. Cette solution représente, en quelque sorte une direction émergente (perpendiculaire) des équations.
+    
+
+       #context[
+      #set math.mat(delim: "|") 
+
+    $ a = vec(a_x, a_y, a_z)
+    "et" b = vec(b_x, b_y, b_z) $
+
+    $ arrow(a) times arrow(b) =  vec(a_y b_z-a_z b_y, a_z b_x-a_x b_z, a_x b_y - a_y b_x) $
+
+    ]
+
+
+  ]
+
+  
   
   
 //]
