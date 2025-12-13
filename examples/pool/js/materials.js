@@ -1,128 +1,146 @@
 // materials.js
-// Système de matériaux et shaders pour la table de billard
+// Système de matériaux et shaders PBR pour la table de billard
 
 import * as THREE from 'three';
 
 /**
- * Shader personnalisé pour le tapis de billard
- * Simule le grain du feutre avec du bruit procédural
+ * Matériau AVANCÉ pour le tapis (Felt)
+ * Utilise MeshStandardMaterial modifié via onBeforeCompile pour :
+ * 1. Garder les ombres et l'éclairage réaliste de la scène
+ * 2. Générer une texture de feutre procédurale haute résolution
  */
 export function createFeltMaterial() {
-    const feltShader = {
-        uniforms: {
-            baseColor: { value: new THREE.Color(0x1aad42) },
-            darkColor: { value: new THREE.Color(0x2b1d42) },
-            lightColor: { value: new THREE.Color(0x2bedaa) },
-            time: { value: 0.0 },
-            noiseScale: { value: 20.0 },
-            grainIntensity: { value: 0.01 }
-        },
-        
-        vertexShader: `
-            varying vec2 vUv;
-            varying vec3 vNormal;
-            varying vec3 vPosition;
-            
-            void main() {
-                vUv = uv;
-                vNormal = normalize(normalMatrix * normal);
-                vPosition = position;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        
-        fragmentShader: `
-            uniform vec3 baseColor;
-            uniform vec3 darkColor;
-            uniform vec3 lightColor;
-            uniform float noiseScale;
-            uniform float grainIntensity;
-            
-            varying vec2 vUv;
-            varying vec3 vNormal;
-            varying vec3 vPosition;
-            
-            // Fonction de bruit simplex 2D simplifiée
-            float noise(vec2 p) {
-                return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
-            }
-            
-            float smoothNoise(vec2 p) {
-                vec2 i = floor(p);
-                vec2 f = fract(p);
-                f = f * f * (3.0 - 2.0 * f);
-                
-                float a = noise(i);
-                float b = noise(i + vec2(1.0, 0.0));
-                float c = noise(i + vec2(0.0, 1.0));
-                float d = noise(i + vec2(1.0, 1.0));
-                
-                return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-            }
-            
-            void main() {
-                // Grain du feutre
-                vec2 noiseCoord = vPosition.xz * noiseScale;
-                float grain = smoothNoise(noiseCoord);
-                grain = grain * 2.0 - 1.0;
-                
-                // Variation de couleur basée sur le grain
-                vec3 color = baseColor;
-                color = mix(color, darkColor, grain * grainIntensity * 0.5 + 0.5);
-                
-                // Légère variation directionnelle (simule le brossage du feutre)
-                float brushPattern = sin(vPosition.x * 600.)    * grain * .02;
-                color = mix(color, lightColor,brushPattern);
-                
-                // Éclairage simple basé sur la normale
-                vec3 lightDir = normalize(vec3(0.0, 1.0, 0.2));
-                float diffuse = max(dot(vNormal, lightDir), 0.9);
-                float gamma = 2.0;
-                gl_FragColor = vec4(color * diffuse * gamma, 1.0);
-            }
-        `
-    };
-    
-    return new THREE.ShaderMaterial({
-        uniforms: feltShader.uniforms,
-        vertexShader: feltShader.vertexShader,
-        fragmentShader: feltShader.fragmentShader,
-        side: THREE.FrontSide,  // Une seule face pour éviter le z-fighting
-        lights: false  // Éclairage personnalisé dans le shader
+    const material = new THREE.MeshStandardMaterial({
+        color: 0x1a8c35, // Vert billard de base (légèrement plus sombre pour le contraste)
+        roughness: 0.9,  // Très rugueux, ne brille pas comme du plastique
+        metalness: 0.0,
+        side: THREE.FrontSide
     });
-}
+
+    // Injection du shader personnalisé dans le pipeline standard de Three.js
+    material.onBeforeCompile = function(shader) {
+        // 1. Uniformes : On augmente drastiquement l'échelle
+        // Une échelle de 1.0 = des vagues de 1 mètre
+        // Une échelle de 1500.0 = des fibres de 1 millimètre
+        shader.uniforms.noiseScale = { value: 1000.0 }; 
+        shader.uniforms.fiberIntensity = { value: 0.08 }; // Contraste du grain (ni trop fort, ni trop faible)
+        
+        // 2. Fonction de bruit "Hash" (Bruit statique)
+        // C'est beaucoup mieux pour simuler du tissu/sable que le bruit de Perlin
+        const noiseFunction = `
+            // Hash sans sinus (plus rapide et plus "croustillant")
+            float hash(vec2 p) {
+                vec3 p3  = fract(vec3(p.xyx) * .1031);
+                p3 += dot(p3, p3.yzx + 33.33);
+                return fract((p3.x + p3.y) * p3.z);
+            }
+            
+            // Varying pour passer la position locale du vertex au fragment
+            varying vec3 vLocalPosition;
+        `;
+
+        // Modification du Vertex Shader pour récupérer la position locale
+        // On utilise la position locale (le modèle 3D) plutôt que les UVs pour éviter les déformations
+        shader.vertexShader = 'varying vec3 vLocalPosition;\n' + shader.vertexShader;
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <begin_vertex>',
+            `
+            #include <begin_vertex>
+            vLocalPosition = position; // On capture la position brute du modèle
+            `
+        );
+        
+        // Modification du Fragment Shader
+        shader.fragmentShader = noiseFunction + '\n' + shader.fragmentShader;
+        shader.fragmentShader = 'uniform float noiseScale;\nuniform float fiberIntensity;\n' + shader.fragmentShader;
+
+shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <map_fragment>',
+            `
+            #include <map_fragment>
+            
+            // --- 1. CALCUL DU GRAIN ---
+            vec2 pos = vLocalPosition.xz;
+            float grain = hash(pos * noiseScale);
+            float microGrain = hash(pos * noiseScale * 3.5);
+            float combinedGrain = (grain * 0.7 + microGrain * 0.3);
+            
+            // --- 2. EFFET DE VIGNETTE RECTANGULAIRE (CORRIGÉ) ---
+            // Rappel : pos est un vec2, donc on utilise .x et .y
+            
+            // Axe X (Largeur ~13m) -> abs(pos.x)
+            float edgeX = smoothstep(4.0, 6.5, abs(pos.x));
+            
+            // Axe Z (Profondeur ~7m) -> abs(pos.y) car c'est le 2eme composant du vec2
+            float edgeZ = smoothstep(1.5, 3.5, abs(pos.y));
+            
+            // On prend le maximum des deux pour assombrir si on est près de n'importe quel bord
+            float shadowStrength = max(edgeX, edgeZ);
+            
+            // Vignette finale : 1.0 au centre, 0.4 aux bords
+            float vignette = 1.0 - (shadowStrength * 0.2); 
+            
+            // --- 3. APPLICATION SUR LA COULEUR ---
+            // On modifie diffuseColor (variable interne de Three.js)
+            vec3 finalColor = diffuseColor.rgb + (combinedGrain - 0.5) * fiberIntensity;
+            
+            // Appliquer la vignette
+            finalColor *= vignette;
+
+            diffuseColor.rgb = finalColor;
+            `
+        );
+    };
+
+    return material;}
 
 /**
  * Matériau pour les bandes (cushions)
+ * Caoutchouc/Tissu légèrement différent
  */
 export function createCushionMaterial() {
     return new THREE.MeshStandardMaterial({
-        color: 0x247a46,
-        roughness: 0.6,
-        metalness: 0.0,
-        side: THREE.FrontSide
+        color: 0x146b2b, // Un peu plus foncé que le tapis
+        roughness: 0.85,
+        metalness: 0.05
     });
 }
 
 /**
  * Matériau pour le cadre en bois
+ * Ajout d'une texture procédurale simple pour simuler des veines
  */
 export function createWoodMaterial() {
-    return new THREE.MeshStandardMaterial({
-        color: 0x5c4033,
-        roughness: 0.4,
-        metalness: 0.0,
-        side: THREE.FrontSide
+    const mat = new THREE.MeshStandardMaterial({
+        color: 0x5c3a21, // Bois acajou
+        roughness: 0.3,  // Un peu brillant (vernis)
+        metalness: 0.0
     });
+    
+    // Petite astuce : on peut ajouter une map ici si tu as une texture bois.jpg
+    // Pour l'instant on reste procédural/couleur simple
+    return mat;
 }
 
 /**
  * Matériau pour les trous (pockets)
  */
 export function createPocketMaterial() {
-    return new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        side: THREE.DoubleSide
+    return new THREE.MeshStandardMaterial({
+        color: 0x050505, // Presque noir
+        roughness: 0.5,
+        metalness: 0.1
+    });
+}
+
+/**
+ * Matériau pour les coins métalliques (si présents dans ton modèle 3D)
+ */
+export function createChromeMaterial() {
+    return new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.15,
+        metalness: 0.9 // Très métallique
     });
 }
 
@@ -133,47 +151,42 @@ export function applyMaterialsToModel(model) {
     const feltMat = createFeltMaterial();
     const cushionMat = createCushionMaterial();
     const woodMat = createWoodMaterial();
+    const pocketMat = createPocketMaterial();
+    const chromeMat = createChromeMaterial();
     
-    console.log('Application des matériaux au modèle...');
+    console.log('Application des matériaux PBR avancés...');
     
     model.traverse((child) => {
         if (child.isMesh) {
-            console.log(`Mesh: "${child.name}"`);
-            
+            // Ombres dynamiques (ESSENTIEL pour le réalisme)
             child.receiveShadow = true;
             child.castShadow = true;
             
             const name = child.name.toLowerCase();
-            console.log(`Nom: "${name}"`);
-            // Tapis (surface de jeu)
-            if (name.includes('felt') || name.includes('table') || 
-                name.includes('tapis') || name.includes('surface')) {
+            
+            // Logique d'attribution intelligente
+            if (name.includes('felt') || name.includes('tapis') || name.includes('surface')) {
                 child.material = feltMat;
-                console.log('  → Shader TAPIS appliqué');
             }
-            // Bandes
-            else if (name.includes('cushion') || name.includes('rail') || 
-                     name.includes('bande') || name.includes('rubber')) {
+            else if (name.includes('cushion') || name.includes('bande') || name.includes('rail')) {
                 child.material = cushionMat;
-                console.log('  → Matériau BANDE appliqué');
             }
-            // Cadre/Bois
-            else if (name.includes('frame') || name.includes('wood') || 
-                     name.includes('bois') || name.includes('cadre')) {
+            else if (name.includes('wood') || name.includes('frame') || name.includes('cadre') || name.includes('bois')) {
                 child.material = woodMat;
-                console.log('  → Matériau BOIS appliqué');
             }
-            // Par défaut (probablement le tapis)
+            else if (name.includes('metal') || name.includes('chrome') || name.includes('corner')) {
+                child.material = chromeMat;
+            }
+            else if (name.includes('pocket') || name.includes('liner') || name.includes('trou')) {
+                child.material = pocketMat;
+            }
             else {
-                child.material = feltMat;
-                console.log('  → Shader TAPIS (défaut) appliqué');
+                // Par défaut, on suppose que c'est du bois ou du décor
+                child.material = woodMat; 
             }
             
-            // Désactiver le frustum culling pour éviter les problèmes de rendu
+            // Correction pour éviter les bugs d'affichage sur certains angles
             child.frustumCulled = false;
-        }
-        else {
-            console.log(child.name);
         }
     });
 }

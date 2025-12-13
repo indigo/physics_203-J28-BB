@@ -3,14 +3,14 @@
 ║              BILLARD MASTER 3D - CODE SOURCE COMPLET              ║
 ║                                                                   ║
 ║  Système UI complet avec menu, pause, détection de victoire      ║
-║  Date: 11/12/2025 21:07:35                                        ║
+║  Date: 13/12/2025 05:55:28                                        ║
 ║                                                                   ║
 ╚═══════════════════════════════════════════════════════════════════╝
 
 
 ═══════════════════════════════════════════════════════════════════
   FICHIER 1/10 : index.html
-  Lignes :       88
+  Lignes :       92
 ═══════════════════════════════════════════════════════════════════
 
 <!DOCTYPE html>
@@ -37,10 +37,14 @@
         
         <!-- 1. MAIN MENU -->
         <div id="screen-menu" class="screen" style="display: flex;">
-            <h1 class="game-title">Pool Pro Tournament</h1>
+            <h1 class="game-title">BILLARD MASTER 3D</h1>
             <div class="menu-buttons">
-                <button id="btn-play" class="btn primary">JOUER</button>
-                <button id="btn-settings" class="btn">OPTIONS</button>
+                <!-- NOUVEAU : Choix du mode -->
+                <button id="btn-pve" class="btn primary">1 JOUEUR (vs BOT)</button>
+                <button id="btn-pvp" class="btn">2 JOUEURS (LOCAL)</button>
+                <button id="btn-bot-vs-bot" class="btn">🤖 BOT vs BOT 🤖</button>
+                
+                <button id="btn-settings" class="btn small">OPTIONS</button>
                 <button id="btn-credits" class="btn small">Crédits</button>
             </div>
         </div>
@@ -486,7 +490,206 @@ export const gameState = new GameStateMachine();
 
 
 ═══════════════════════════════════════════════════════════════════
-  FICHIER 5/10 : js/ball.js
+  FICHIER 5/10 : js/materials.js
+  Lignes :      192
+═══════════════════════════════════════════════════════════════════
+
+// materials.js
+// Système de matériaux et shaders PBR pour la table de billard
+
+import * as THREE from 'three';
+
+/**
+ * Matériau AVANCÉ pour le tapis (Felt)
+ * Utilise MeshStandardMaterial modifié via onBeforeCompile pour :
+ * 1. Garder les ombres et l'éclairage réaliste de la scène
+ * 2. Générer une texture de feutre procédurale haute résolution
+ */
+export function createFeltMaterial() {
+    const material = new THREE.MeshStandardMaterial({
+        color: 0x1a8c35, // Vert billard de base (légèrement plus sombre pour le contraste)
+        roughness: 0.9,  // Très rugueux, ne brille pas comme du plastique
+        metalness: 0.0,
+        side: THREE.FrontSide
+    });
+
+    // Injection du shader personnalisé dans le pipeline standard de Three.js
+    material.onBeforeCompile = function(shader) {
+        // 1. Uniformes : On augmente drastiquement l'échelle
+        // Une échelle de 1.0 = des vagues de 1 mètre
+        // Une échelle de 1500.0 = des fibres de 1 millimètre
+        shader.uniforms.noiseScale = { value: 1000.0 }; 
+        shader.uniforms.fiberIntensity = { value: 0.08 }; // Contraste du grain (ni trop fort, ni trop faible)
+        
+        // 2. Fonction de bruit "Hash" (Bruit statique)
+        // C'est beaucoup mieux pour simuler du tissu/sable que le bruit de Perlin
+        const noiseFunction = `
+            // Hash sans sinus (plus rapide et plus "croustillant")
+            float hash(vec2 p) {
+                vec3 p3  = fract(vec3(p.xyx) * .1031);
+                p3 += dot(p3, p3.yzx + 33.33);
+                return fract((p3.x + p3.y) * p3.z);
+            }
+            
+            // Varying pour passer la position locale du vertex au fragment
+            varying vec3 vLocalPosition;
+        `;
+
+        // Modification du Vertex Shader pour récupérer la position locale
+        // On utilise la position locale (le modèle 3D) plutôt que les UVs pour éviter les déformations
+        shader.vertexShader = 'varying vec3 vLocalPosition;\n' + shader.vertexShader;
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <begin_vertex>',
+            `
+            #include <begin_vertex>
+            vLocalPosition = position; // On capture la position brute du modèle
+            `
+        );
+        
+        // Modification du Fragment Shader
+        shader.fragmentShader = noiseFunction + '\n' + shader.fragmentShader;
+        shader.fragmentShader = 'uniform float noiseScale;\nuniform float fiberIntensity;\n' + shader.fragmentShader;
+
+shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <map_fragment>',
+            `
+            #include <map_fragment>
+            
+            // --- 1. CALCUL DU GRAIN ---
+            vec2 pos = vLocalPosition.xz;
+            float grain = hash(pos * noiseScale);
+            float microGrain = hash(pos * noiseScale * 3.5);
+            float combinedGrain = (grain * 0.7 + microGrain * 0.3);
+            
+            // --- 2. EFFET DE VIGNETTE RECTANGULAIRE (CORRIGÉ) ---
+            // Rappel : pos est un vec2, donc on utilise .x et .y
+            
+            // Axe X (Largeur ~13m) -> abs(pos.x)
+            float edgeX = smoothstep(4.0, 6.5, abs(pos.x));
+            
+            // Axe Z (Profondeur ~7m) -> abs(pos.y) car c'est le 2eme composant du vec2
+            float edgeZ = smoothstep(1.5, 3.5, abs(pos.y));
+            
+            // On prend le maximum des deux pour assombrir si on est près de n'importe quel bord
+            float shadowStrength = max(edgeX, edgeZ);
+            
+            // Vignette finale : 1.0 au centre, 0.4 aux bords
+            float vignette = 1.0 - (shadowStrength * 0.2); 
+            
+            // --- 3. APPLICATION SUR LA COULEUR ---
+            // On modifie diffuseColor (variable interne de Three.js)
+            vec3 finalColor = diffuseColor.rgb + (combinedGrain - 0.5) * fiberIntensity;
+            
+            // Appliquer la vignette
+            finalColor *= vignette;
+
+            diffuseColor.rgb = finalColor;
+            `
+        );
+    };
+
+    return material;}
+
+/**
+ * Matériau pour les bandes (cushions)
+ * Caoutchouc/Tissu légèrement différent
+ */
+export function createCushionMaterial() {
+    return new THREE.MeshStandardMaterial({
+        color: 0x146b2b, // Un peu plus foncé que le tapis
+        roughness: 0.85,
+        metalness: 0.05
+    });
+}
+
+/**
+ * Matériau pour le cadre en bois
+ * Ajout d'une texture procédurale simple pour simuler des veines
+ */
+export function createWoodMaterial() {
+    const mat = new THREE.MeshStandardMaterial({
+        color: 0x5c3a21, // Bois acajou
+        roughness: 0.3,  // Un peu brillant (vernis)
+        metalness: 0.0
+    });
+    
+    // Petite astuce : on peut ajouter une map ici si tu as une texture bois.jpg
+    // Pour l'instant on reste procédural/couleur simple
+    return mat;
+}
+
+/**
+ * Matériau pour les trous (pockets)
+ */
+export function createPocketMaterial() {
+    return new THREE.MeshStandardMaterial({
+        color: 0x050505, // Presque noir
+        roughness: 0.5,
+        metalness: 0.1
+    });
+}
+
+/**
+ * Matériau pour les coins métalliques (si présents dans ton modèle 3D)
+ */
+export function createChromeMaterial() {
+    return new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.15,
+        metalness: 0.9 // Très métallique
+    });
+}
+
+/**
+ * Applique les matériaux appropriés au modèle GLB
+ */
+export function applyMaterialsToModel(model) {
+    const feltMat = createFeltMaterial();
+    const cushionMat = createCushionMaterial();
+    const woodMat = createWoodMaterial();
+    const pocketMat = createPocketMaterial();
+    const chromeMat = createChromeMaterial();
+    
+    console.log('Application des matériaux PBR avancés...');
+    
+    model.traverse((child) => {
+        if (child.isMesh) {
+            // Ombres dynamiques (ESSENTIEL pour le réalisme)
+            child.receiveShadow = true;
+            child.castShadow = true;
+            
+            const name = child.name.toLowerCase();
+            
+            // Logique d'attribution intelligente
+            if (name.includes('felt') || name.includes('tapis') || name.includes('surface')) {
+                child.material = feltMat;
+            }
+            else if (name.includes('cushion') || name.includes('bande') || name.includes('rail')) {
+                child.material = cushionMat;
+            }
+            else if (name.includes('wood') || name.includes('frame') || name.includes('cadre') || name.includes('bois')) {
+                child.material = woodMat;
+            }
+            else if (name.includes('metal') || name.includes('chrome') || name.includes('corner')) {
+                child.material = chromeMat;
+            }
+            else if (name.includes('pocket') || name.includes('liner') || name.includes('trou')) {
+                child.material = pocketMat;
+            }
+            else {
+                // Par défaut, on suppose que c'est du bois ou du décor
+                child.material = woodMat; 
+            }
+            
+            // Correction pour éviter les bugs d'affichage sur certains angles
+            child.frustumCulled = false;
+        }
+    });
+}
+
+
+═══════════════════════════════════════════════════════════════════
+  FICHIER 6/10 : js/ball.js
   Lignes :      140
 ═══════════════════════════════════════════════════════════════════
 
@@ -633,14 +836,16 @@ export class BilliardBall {
 
 
 ═══════════════════════════════════════════════════════════════════
-  FICHIER 6/10 : js/table.js
-  Lignes :      181
+  FICHIER 7/10 : js/table.js
+  Lignes :      229
 ═══════════════════════════════════════════════════════════════════
 
 // table.js
-// Construction de la table de billard avec bandes, trous et géométrie
+// Construction de la table de billard avec modèle 3D et physique
 
 import * as THREE from 'three';
+import { GLTFLoader } from 'jsm/loaders/GLTFLoader.js';
+import { applyMaterialsToModel, createPocketMaterial } from './materials.js';
 import { 
     TABLE_W, TABLE_H, RUBBER_DEPTH, RAIL_HEIGHT, WOOD_DEPTH, 
     FRAME_WIDTH, FRAME_HEIGHT, VAL_HOLE_RADIUS, VAL_OFFSET_CORNER, 
@@ -650,6 +855,43 @@ import {
 export let walls2D = [];
 
 export function createTable(scene) {
+    // 1. CHARGER LE MODÈLE 3D (Visuel)
+    const loader = new GLTFLoader();
+    
+    loader.load('assets/pool_table.glb', (gltf) => {
+        const model = gltf.scene;
+        
+        console.log('Modèle GLB chargé avec succès');
+        
+        // Appliquer les matériaux avec le système de shaders
+        applyMaterialsToModel(model);
+        
+        // Positionnement : Le modèle doit être centré à (0,0,0) dans Blender
+        scene.add(model);
+               // createFallbackTable(scene);
+        console.log('Modèle 3D ajouté à la scène');
+        console.log('Position:', model.position);
+        console.log('Échelle:', model.scale);
+        
+    }, undefined, (error) => {
+        console.error('Erreur lors du chargement de la table 3D:', error);
+        console.log('Création de la table procédurale de secours...');
+        createFallbackTable(scene);
+    });
+
+    // 2. GÉNÉRER LA PHYSIQUE (Invisible mais essentielle)
+    walls2D = [];
+    generatePhysicsBoundaries();
+    
+    // 3. Ajouter les trous visuels (cylindres noirs)
+    createHoles(scene);
+}
+
+// Fonction de secours si le modèle GLB ne charge pas
+function createFallbackTable(scene) {
+    console.log('Création de la table procédurale simple...');
+    
+    // Tapis principal
     const floorW = TABLE_W + (RUBBER_DEPTH + FRAME_WIDTH) * 2;
     const floorH = TABLE_H + (RUBBER_DEPTH + FRAME_WIDTH) * 2;
     const floor = new THREE.Mesh(
@@ -659,47 +901,96 @@ export function createTable(scene) {
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
+    
+    // Bandes simplifiées (4 rectangles)
+    const cushionHeight = RAIL_HEIGHT;
+    const cushionMat = new THREE.MeshStandardMaterial({ color: 0x247a46, roughness: 0.6 });
+    
+    // Bande Nord
+    const northCushion = new THREE.Mesh(
+        new THREE.BoxGeometry(TABLE_W, cushionHeight, RUBBER_DEPTH),
+        cushionMat
+    );
+    northCushion.position.set(0, cushionHeight/2, -TABLE_H/2 - RUBBER_DEPTH/2);
+    northCushion.castShadow = true;
+    scene.add(northCushion);
+    
+    // Bande Sud
+    const southCushion = new THREE.Mesh(
+        new THREE.BoxGeometry(TABLE_W, cushionHeight, RUBBER_DEPTH),
+        cushionMat
+    );
+    southCushion.position.set(0, cushionHeight/2, TABLE_H/2 + RUBBER_DEPTH/2);
+    southCushion.castShadow = true;
+    scene.add(southCushion);
+    
+    // Bande Est
+    const eastCushion = new THREE.Mesh(
+        new THREE.BoxGeometry(RUBBER_DEPTH, cushionHeight, TABLE_H + RUBBER_DEPTH * 2),
+        cushionMat
+    );
+    eastCushion.position.set(TABLE_W/2 + RUBBER_DEPTH/2, cushionHeight/2, 0);
+    eastCushion.castShadow = true;
+    scene.add(eastCushion);
+    
+    // Bande Ouest
+    const westCushion = new THREE.Mesh(
+        new THREE.BoxGeometry(RUBBER_DEPTH, cushionHeight, TABLE_H + RUBBER_DEPTH * 2),
+        cushionMat
+    );
+    westCushion.position.set(-TABLE_W/2 - RUBBER_DEPTH/2, cushionHeight/2, 0);
+    westCushion.castShadow = true;
+    scene.add(westCushion);
+    
+    // Cadre en bois
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.4 });
+    const frameThickness = FRAME_WIDTH;
+    const frameH = FRAME_HEIGHT;
+    
+    // Cadre Nord
+    const northFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(TABLE_W + RUBBER_DEPTH * 2 + frameThickness * 2, frameH, frameThickness),
+        frameMat
+    );
+    northFrame.position.set(0, frameH/2, -TABLE_H/2 - RUBBER_DEPTH - frameThickness/2);
+    scene.add(northFrame);
+    
+    // Cadre Sud
+    const southFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(TABLE_W + RUBBER_DEPTH * 2 + frameThickness * 2, frameH, frameThickness),
+        frameMat
+    );
+    southFrame.position.set(0, frameH/2, TABLE_H/2 + RUBBER_DEPTH + frameThickness/2);
+    scene.add(southFrame);
+    
+    // Cadre Est
+    const eastFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(frameThickness, frameH, TABLE_H + RUBBER_DEPTH * 2),
+        frameMat
+    );
+    eastFrame.position.set(TABLE_W/2 + RUBBER_DEPTH + frameThickness/2, frameH/2, 0);
+    scene.add(eastFrame);
+    
+    // Cadre Ouest
+    const westFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(frameThickness, frameH, TABLE_H + RUBBER_DEPTH * 2),
+        frameMat
+    );
+    westFrame.position.set(-TABLE_W/2 - RUBBER_DEPTH - frameThickness/2, frameH/2, 0);
+    scene.add(westFrame);
+}
 
-    walls2D = [];
+// GÉNÉRATION DE LA PHYSIQUE (Murs invisibles)
+function generatePhysicsBoundaries() {
 
-    function buildSolidRail(p1, p2, normal) {
+    // Fonction pour construire les murs physiques (sans visuel)
+    function buildPhysicsRail(p1, p2, normal) {
         const vecDir = new THREE.Vector3().subVectors(p2, p1).normalize();
         const facingSpread = RUBBER_DEPTH * 0.7;
         const p4 = p1.clone().add(normal.clone().multiplyScalar(RUBBER_DEPTH)).add(vecDir.clone().multiplyScalar(-facingSpread));
         const p3 = p2.clone().add(normal.clone().multiplyScalar(RUBBER_DEPTH)).add(vecDir.clone().multiplyScalar(facingSpread));
 
-        const shape = new THREE.Shape();
-        shape.moveTo(p1.x, p1.z);
-        shape.lineTo(p2.x, p2.z);
-        shape.lineTo(p3.x, p3.z);
-        shape.lineTo(p4.x, p4.z);
-        
-        const geom = new THREE.ExtrudeGeometry(shape, { depth: RAIL_HEIGHT, bevelEnabled: false });
-        geom.rotateX(Math.PI / 2);
-        geom.translate(0, RAIL_HEIGHT, 0);
-        const mesh = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ color: 0x247a46, roughness: 0.6 }));
-        mesh.castShadow = true;
-        scene.add(mesh);
-
-        const w1 = p4.clone();
-        const w2 = p3.clone();
-        const w3 = w2.clone().add(normal.clone().multiplyScalar(WOOD_DEPTH));
-        const w4 = w1.clone().add(normal.clone().multiplyScalar(WOOD_DEPTH));
-        const mitre = WOOD_DEPTH * 0.8;
-        w3.add(vecDir.clone().multiplyScalar(mitre));
-        w4.add(vecDir.clone().multiplyScalar(-mitre));
-        
-        const wShape = new THREE.Shape();
-        wShape.moveTo(w1.x, w1.z);
-        wShape.lineTo(w2.x, w2.z);
-        wShape.lineTo(w3.x, w3.z);
-        wShape.lineTo(w4.x, w4.z);
-        
-        const wGeom = new THREE.ExtrudeGeometry(wShape, { depth: RAIL_HEIGHT + 0.05, bevelEnabled: false });
-        wGeom.rotateX(Math.PI / 2);
-        wGeom.translate(0, RAIL_HEIGHT + 0.05, 0);
-        scene.add(new THREE.Mesh(wGeom, new THREE.MeshStandardMaterial({ color: 0x5c4033 })));
-
+        // On ne crée plus de Mesh, juste les segments de collision
         addWallSegment(p4, p1);
         addWallSegment(p1, p2);
         addWallSegment(p2, p3);
@@ -720,83 +1011,42 @@ export function createTable(scene) {
     const W = TABLE_W / 2;
     const H = TABLE_H / 2;
     
-    buildSolidRail(
+    // Construire les 6 segments de bandes (physique uniquement)
+    buildPhysicsRail(
         new THREE.Vector3(-W + CORNER_KNUCKLE, 0, -H), 
         new THREE.Vector3(-SIDE_KNUCKLE, 0, -H), 
         new THREE.Vector3(0, 0, -1)
     );
-    buildSolidRail(
+    buildPhysicsRail(
         new THREE.Vector3(SIDE_KNUCKLE, 0, -H), 
         new THREE.Vector3(W - CORNER_KNUCKLE, 0, -H), 
         new THREE.Vector3(0, 0, -1)
     );
-    buildSolidRail(
+    buildPhysicsRail(
         new THREE.Vector3(W, 0, -H + CORNER_KNUCKLE), 
         new THREE.Vector3(W, 0, H - CORNER_KNUCKLE), 
         new THREE.Vector3(1, 0, 0)
     );
-    buildSolidRail(
+    buildPhysicsRail(
         new THREE.Vector3(W - CORNER_KNUCKLE, 0, H), 
         new THREE.Vector3(SIDE_KNUCKLE, 0, H), 
         new THREE.Vector3(0, 0, 1)
     );
-    buildSolidRail(
+    buildPhysicsRail(
         new THREE.Vector3(-SIDE_KNUCKLE, 0, H), 
         new THREE.Vector3(-W + CORNER_KNUCKLE, 0, H), 
         new THREE.Vector3(0, 0, 1)
     );
-    buildSolidRail(
+    buildPhysicsRail(
         new THREE.Vector3(-W, 0, H - CORNER_KNUCKLE), 
         new THREE.Vector3(-W, 0, -H + CORNER_KNUCKLE), 
         new THREE.Vector3(-1, 0, 0)
     );
-
-    // Cadre & Trous
-    createCabinet(scene);
-    createHoles(scene);
-}
-
-function createCabinet(scene) {
-    const W = TABLE_W / 2;
-    const H = TABLE_H / 2;
-    const innerW = W + RUBBER_DEPTH;
-    const innerH = H + RUBBER_DEPTH;
-    const outerW = innerW + FRAME_WIDTH;
-    const outerH = innerH + FRAME_WIDTH;
-    
-    const shape = new THREE.Shape();
-    shape.moveTo(-outerW, -outerH);
-    shape.lineTo(outerW, -outerH);
-    shape.lineTo(outerW, outerH);
-    shape.lineTo(-outerW, outerH);
-    shape.lineTo(-outerW, -outerH);
-    
-    const hole = new THREE.Path();
-    hole.moveTo(-innerW, -innerH);
-    hole.lineTo(innerW, -innerH);
-    hole.lineTo(innerW, innerH);
-    hole.lineTo(-innerW, innerH);
-    hole.lineTo(-innerW, -innerH);
-    shape.holes.push(hole);
-    
-    const geom = new THREE.ExtrudeGeometry(shape, { 
-        depth: FRAME_HEIGHT, 
-        bevelEnabled: true, 
-        bevelThickness: 0.05, 
-        bevelSize: 0.05, 
-        bevelSegments: 2 
-    });
-    geom.rotateX(Math.PI / 2);
-    geom.translate(0, FRAME_HEIGHT, 0);
-    scene.add(new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ 
-        color: 0x5c4033, 
-        roughness: 0.4 
-    })));
 }
 
 function createHoles(scene) {
     const holeGeo = new THREE.CylinderGeometry(VAL_HOLE_RADIUS, VAL_HOLE_RADIUS, 0.5, 32);
-    const holeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const holeMat = createPocketMaterial();
     
     const W = TABLE_W / 2;
     const H = TABLE_H / 2;
@@ -814,14 +1064,15 @@ function createHoles(scene) {
     
     pp.forEach(p => {
         const m = new THREE.Mesh(holeGeo, holeMat);
-        m.position.set(p.x, -0.1, p.z);
+        m.position.set(p.x, -0.2, p.z);  // Légèrement plus bas pour éviter le z-fighting
+        m.renderOrder = -1;  // Rendre en premier pour éviter les conflits
         scene.add(m);
     });
 }
 
 
 ═══════════════════════════════════════════════════════════════════
-  FICHIER 7/10 : js/physics.js
+  FICHIER 8/10 : js/physics.js
   Lignes :      139
 ═══════════════════════════════════════════════════════════════════
 
@@ -967,8 +1218,623 @@ export function updatePhysics(balls, dt, turnInfo = null) {
 
 
 ═══════════════════════════════════════════════════════════════════
-  FICHIER 8/10 : js/ui.js
-  Lignes :      162
+  FICHIER 9/10 : js/simulator.js
+  Lignes :      261
+═══════════════════════════════════════════════════════════════════
+
+// simulator.js
+// Simulateur de physique pour prédire les résultats des tirs (utilisé par le bot)
+
+import * as THREE from 'three';
+import { BALL_RADIUS, BALL_MASS, TABLE_W, TABLE_H, VAL_HOLE_RADIUS, VAL_OFFSET_CORNER, VAL_OFFSET_SIDE } from './constants.js';
+import { walls2D } from './table.js';
+
+export class PhysicsSimulator {
+    constructor() {
+        this.maxSteps = 500; // Nombre max d'itérations de simulation
+        this.dt = 0.016; // Pas de temps (16ms)
+        this.subSteps = 15; // Sous-étapes pour la précision
+        
+        // Paramètres physiques (copiés de physics.js)
+        this.muSlide = 0.2;
+        this.muRoll = 0.07;
+        this.restitution = 0.90;
+        this.wallRestitution = 0.6;
+    }
+
+    /**
+     * Simule un tir complet et retourne les événements
+     * @param {number} angle - Angle du tir
+     * @param {number} power - Puissance du tir
+     * @param {number} cueHeight - Hauteur du point d'impact (effet)
+     * @param {Array} balls - Tableau des billes actuelles
+     * @param {Object} whiteBall - La bille blanche
+     * @returns {Object} Résultat de la simulation
+     */
+    simulateShot(angle, power, cueHeight, balls, whiteBall) {
+        // Cloner l'état actuel des billes pour ne pas modifier l'original
+        const simBalls = this.cloneBalls(balls);
+        const simWhite = simBalls.find(b => b.number === 0);
+        
+        // Appliquer le tir initial
+        const dir = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
+        simWhite.vel.copy(dir.clone().multiplyScalar(power));
+        
+        // Appliquer l'effet (spin) si nécessaire
+        if (cueHeight !== 0) {
+            const impactPoint = new THREE.Vector3(0, cueHeight, 0);
+            const forceDir = dir.clone();
+            const forceMag = power * BALL_MASS * 50;
+            const forceVec = forceDir.multiplyScalar(forceMag);
+            const torque = new THREE.Vector3().crossVectors(impactPoint, forceVec);
+            const INERTIA = 0.4 * BALL_MASS * BALL_RADIUS * BALL_RADIUS;
+            const impulseDt = 0.01;
+            simWhite.angVel.add(torque.divideScalar(INERTIA).multiplyScalar(impulseDt));
+        }
+        
+        // Événements à tracker
+        const events = {
+            ballsPotted: [],
+            whiteScratched: false,
+            finalWhitePos: null,
+            finalBallPositions: [],
+            collisions: [],
+            stoppedAt: 0
+        };
+        
+        // Simulation de la physique
+        let step = 0;
+        while (step < this.maxSteps) {
+            const allStopped = this.simulateStep(simBalls, events);
+            
+            if (allStopped) {
+                events.stoppedAt = step;
+                break;
+            }
+            
+            step++;
+        }
+        
+        // Enregistrer les positions finales
+        events.finalWhitePos = simWhite.pos.clone();
+        events.finalBallPositions = simBalls.map(b => ({
+            number: b.number,
+            pos: b.pos.clone(),
+            inPocket: b.inPocket
+        }));
+        
+        return events;
+    }
+
+    /**
+     * Clone les billes pour la simulation
+     */
+    cloneBalls(balls) {
+        return balls.map(ball => ({
+            number: ball.number,
+            pos: ball.pos.clone(),
+            vel: ball.vel.clone(),
+            angVel: ball.angVel.clone(),
+            inPocket: ball.inPocket,
+            mesh: null // Pas besoin du mesh dans la simulation
+        }));
+    }
+
+    /**
+     * Simule un pas de temps
+     */
+    simulateStep(balls, events) {
+        const subDt = this.dt / this.subSteps;
+        
+        for (let s = 0; s < this.subSteps; s++) {
+            // Collisions entre billes
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    const b1 = balls[i], b2 = balls[j];
+                    if (b1.inPocket || b2.inPocket) continue;
+                    
+                    const dv = new THREE.Vector3().subVectors(b2.pos, b1.pos);
+                    const d = dv.length();
+                    
+                    if (d < BALL_RADIUS * 2) {
+                        const n = dv.normalize();
+                        const pen = (BALL_RADIUS * 2 - d) * 0.5;
+                        
+                        b1.pos.sub(n.clone().multiplyScalar(pen));
+                        b2.pos.add(n.clone().multiplyScalar(pen));
+                        
+                        const vRel = new THREE.Vector3().subVectors(b1.vel, b2.vel).dot(n);
+                        if (vRel < 0) continue;
+                        
+                        const imp = n.multiplyScalar(-(1 + this.restitution) * vRel * 0.5);
+                        b1.vel.add(imp);
+                        b2.vel.sub(imp);
+                        
+                        // Enregistrer la collision
+                        events.collisions.push({ ball1: b1.number, ball2: b2.number });
+                    }
+                }
+            }
+
+            // Collisions avec les murs
+            balls.forEach(b => {
+                if (b.inPocket) return;
+                
+                for (let w of walls2D) {
+                    const abx = w.p2.x - w.p1.x;
+                    const abz = w.p2.z - w.p1.z;
+                    const apx = b.pos.x - w.p1.x;
+                    const apz = b.pos.z - w.p1.z;
+                    
+                    let t = (apx * abx + apz * abz) / w.lenSq;
+                    t = Math.max(0, Math.min(1, t));
+                    
+                    const cx = w.p1.x + t * abx;
+                    const cz = w.p1.z + t * abz;
+                    const dx = b.pos.x - cx;
+                    const dz = b.pos.z - cz;
+                    const dSq = dx * dx + dz * dz;
+                    
+                    if (dSq < BALL_RADIUS * BALL_RADIUS) {
+                        const dist = Math.sqrt(dSq);
+                        let nx, nz;
+                        
+                        if (dist < 1e-5) {
+                            nx = w.normal.x;
+                            nz = w.normal.z;
+                        } else {
+                            nx = dx / dist;
+                            nz = dz / dist;
+                        }
+                        
+                        b.pos.x += nx * (BALL_RADIUS - dist);
+                        b.pos.z += nz * (BALL_RADIUS - dist);
+                        
+                        const vn = b.vel.x * nx + b.vel.z * nz;
+                        if (vn < 0) {
+                            const j = -(1 + this.wallRestitution) * vn;
+                            b.vel.x += nx * j;
+                            b.vel.z += nz * j;
+                            b.angVel.multiplyScalar(0.9);
+                        }
+                    }
+                }
+
+                // Détection des trous
+                this.checkPockets(b, events);
+
+                // Mise à jour physique (friction, etc.)
+                this.updateBallPhysics(b, subDt);
+            });
+        }
+        
+        // Vérifier si toutes les billes sont arrêtées
+        return balls.every(b => b.inPocket || b.vel.lengthSq() < 0.0001);
+    }
+
+    /**
+     * Vérifie si une bille tombe dans un trou
+     */
+    checkPockets(ball, events) {
+        if (ball.inPocket) return;
+        
+        const W = TABLE_W / 2;
+        const H = TABLE_H / 2;
+        const dX = Math.cos(Math.PI / 4) * VAL_OFFSET_CORNER;
+        const dZ = Math.sin(Math.PI / 4) * VAL_OFFSET_CORNER;
+        
+        const pockets = [
+            { x: -W - dX, z: -H - dZ },
+            { x: W + dX, z: -H - dZ },
+            { x: 0, z: -H - VAL_OFFSET_SIDE },
+            { x: -W - dX, z: H + dZ },
+            { x: W + dX, z: H + dZ },
+            { x: 0, z: H + VAL_OFFSET_SIDE }
+        ];
+        
+        for (let p of pockets) {
+            const dx = ball.pos.x - p.x;
+            const dz = ball.pos.z - p.z;
+            if (dx * dx + dz * dz < VAL_HOLE_RADIUS * VAL_HOLE_RADIUS) {
+                ball.inPocket = true;
+                ball.vel.set(0, 0, 0);
+                ball.angVel.set(0, 0, 0);
+                
+                if (ball.number === 0) {
+                    events.whiteScratched = true;
+                } else {
+                    events.ballsPotted.push(ball.number);
+                }
+                break;
+            }
+        }
+    }
+
+    /**
+     * Met à jour la physique d'une bille (friction, roulement)
+     */
+    updateBallPhysics(ball, dt) {
+        if (ball.inPocket) return;
+        
+        const speed = ball.vel.length();
+        if (speed < 0.001) {
+            ball.vel.set(0, 0, 0);
+            ball.angVel.set(0, 0, 0);
+            return;
+        }
+        
+        // Friction de glissement
+        const frictionForce = this.muSlide * BALL_MASS * 9.81;
+        const frictionAcc = frictionForce / BALL_MASS;
+        const velDir = ball.vel.clone().normalize();
+        ball.vel.sub(velDir.multiplyScalar(frictionAcc * dt));
+        
+        // Friction de roulement
+        const rollResistance = this.muRoll * 9.81;
+        const newSpeed = Math.max(0, speed - rollResistance * dt);
+        if (speed > 0) {
+            ball.vel.multiplyScalar(newSpeed / speed);
+        }
+        
+        // Décroissance du spin
+        ball.angVel.multiplyScalar(Math.max(0, 1 - dt * 2));
+        
+        // Mise à jour de la position
+        ball.pos.add(ball.vel.clone().multiplyScalar(dt));
+    }
+}
+
+
+═══════════════════════════════════════════════════════════════════
+  FICHIER 10/10 : js/smartBot.js
+  Lignes :      233
+═══════════════════════════════════════════════════════════════════
+
+// smartBot.js
+// Bot intelligent avec simulation de physique pour jouer au billard
+
+import * as THREE from 'three';
+import { PhysicsSimulator } from './simulator.js';
+import { TABLE_W, TABLE_H, BALL_RADIUS } from './constants.js';
+import { gameState } from './gameState.js';
+import { focusCameraOnTarget } from './ui.js';
+
+export class SmartBot {
+    constructor(difficulty = 0.5) {
+        this.simulator = new PhysicsSimulator();
+        this.difficulty = difficulty; // 0 (Stupide) à 1 (Dieu)
+        this.isThinking = false;
+    }
+
+    /**
+     * Le bot joue son tour
+     * @param {Object} whiteBall - La bille blanche
+     * @param {Array} balls - Toutes les billes
+     * @param {Function} shootCallback - Fonction pour tirer (angle, power)
+     */
+    async playTurn(whiteBall, balls, shootCallback) {
+        if (this.isThinking) return;
+        this.isThinking = true;
+        
+        console.log("🧠 Le Bot réfléchit...");
+        
+        // 1. Identifier mes cibles
+        const myBalls = this.getTargets(balls);
+        if (myBalls.length === 0) {
+            console.log("⚠️ Aucune cible disponible");
+            this.isThinking = false;
+            return;
+        }
+
+        let bestShot = null;
+        let maxScore = -Infinity;
+
+        // 2. Bruteforce intelligent
+        // On teste chaque bille ciblable vers chaque trou possible
+        const pockets = this.getPockets();
+        
+        console.log(`🎯 Analyse de ${myBalls.length} cibles × ${pockets.length} trous...`);
+
+        for (let target of myBalls) {
+            // 🎥 VISUALISATION : Déplacer la caméra vers la bille évaluée
+            focusCameraOnTarget(target);
+            
+            // Petit délai pour voir la caméra bouger (effet "réflexion")
+            await new Promise(r => setTimeout(r, 200));
+            
+            for (let pocket of pockets) {
+                
+                // Calcul géométrique de base (Angle théorique)
+                const aimParams = this.calculateGeometricAim(whiteBall.pos, target.pos, pocket);
+                if (!aimParams) continue; // Pas de ligne de vue directe (optionnel)
+
+                // 3. LA SIMULATION
+                // On simule ce tir exact
+                const simResult = this.simulator.simulateShot(
+                    aimParams.angle, 
+                    aimParams.power, 
+                    0, // Pas d'effet pour l'instant pour le bot
+                    balls, 
+                    whiteBall
+                );
+
+                // 4. Scoring du résultat
+                const score = this.evaluateShot(simResult, target.number);
+
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestShot = { 
+                        angle: aimParams.angle, 
+                        power: aimParams.power,
+                        target: target.number,
+                        expectedPotted: simResult.ballsPotted
+                    };
+                }
+            }
+        }
+
+        // Si aucun coup valide trouvé, on tire au hasard (cas de snook)
+        if (!bestShot) {
+            console.log("🎲 Aucun bon coup trouvé, tir aléatoire");
+            bestShot = { 
+                angle: Math.random() * Math.PI * 2, 
+                power: 15 + Math.random() * 10 
+            };
+        } else {
+            console.log(`✅ Meilleur coup: Cible ${bestShot.target}, Score ${maxScore.toFixed(0)}`);
+            
+            // 🎥 VISUALISATION FINALE : Montrer la bille choisie
+            const finalTarget = balls.find(b => b.number === bestShot.target);
+            if (finalTarget) {
+                focusCameraOnTarget(finalTarget);
+                await new Promise(r => setTimeout(r, 500)); // Pause pour bien voir
+            }
+        }
+
+        // 5. Application de l'erreur humaine (Basée sur la difficulté)
+        // Un bot pro a une déviation de 0.01 rad, un débutant de 0.2 rad
+        const errorMargin = (1 - this.difficulty) * 0.2; 
+        const finalAngle = bestShot.angle + (Math.random() - 0.5) * errorMargin;
+        const finalPower = bestShot.power + (Math.random() - 0.5) * (1 - this.difficulty) * 5;
+
+        // Délai pour le réalisme
+        await new Promise(r => setTimeout(r, 800 + Math.random() * 500));
+        
+        console.log(`🎱 Bot tire: angle=${(finalAngle * 180 / Math.PI).toFixed(1)}°, power=${finalPower.toFixed(1)}`);
+        
+        shootCallback(finalAngle, finalPower);
+        this.isThinking = false;
+    }
+
+    /**
+     * Évalue la qualité d'un tir simulé
+     * @param {Object} simEvents - Résultat de la simulation
+     * @param {number} targetNumber - Numéro de la bille ciblée
+     * @returns {number} Score du tir
+     */
+    evaluateShot(simEvents, targetNumber) {
+        let score = 0;
+
+        // CRITIQUE : Ne pas empocher la blanche
+        if (simEvents.whiteScratched) return -10000;
+
+        // POSITIF : Empocher la bonne bille
+        if (simEvents.ballsPotted.includes(targetNumber)) {
+            score += 1000;
+        }
+
+        // BONUS : Empocher plusieurs billes d'un coup
+        const validPots = simEvents.ballsPotted.filter(n => n !== 0 && n !== 8);
+        score += validPots.length * 500;
+
+        // NÉGATIF : Empocher la noire trop tôt
+        if (simEvents.ballsPotted.includes(8)) {
+            score -= 5000;
+        }
+
+        // STRATÉGIQUE : Placement de la blanche
+        // Si je suis un pro (difficulty > 0.8), je veux que la blanche finisse au centre
+        if (this.difficulty > 0.8 && simEvents.finalWhitePos) {
+            const distToCenter = simEvents.finalWhitePos.length(); // distance de (0,0,0)
+            score -= distToCenter * 10; // On préfère le centre
+        }
+
+        // BONUS : Nombre de collisions (plus il y en a, plus c'est risqué)
+        if (this.difficulty > 0.5) {
+            score -= simEvents.collisions.length * 5;
+        }
+
+        // BONUS : Arrêt rapide (moins de risques)
+        score += (this.simulator.maxSteps - simEvents.stoppedAt) * 0.5;
+
+        return score;
+    }
+
+    /**
+     * Calcule l'angle et la puissance pour viser une bille vers un trou
+     * @param {THREE.Vector3} whitePos - Position de la blanche
+     * @param {THREE.Vector3} targetPos - Position de la cible
+     * @param {THREE.Vector3} pocketPos - Position du trou
+     * @returns {Object|null} {angle, power} ou null si impossible
+     */
+    calculateGeometricAim(whitePos, targetPos, pocketPos) {
+        // Vecteur Cible -> Trou
+        const toPocket = new THREE.Vector3().subVectors(pocketPos, targetPos).normalize();
+        
+        // Point fantôme derrière la cible (où doit frapper la blanche)
+        const ghostPos = targetPos.clone().sub(toPocket.clone().multiplyScalar(BALL_RADIUS * 2));
+        
+        // Vecteur de tir (Blanche -> Point fantôme)
+        const shootDir = new THREE.Vector3().subVectors(ghostPos, whitePos);
+        const distance = shootDir.length();
+        
+        // Vérification basique : la blanche n'est pas trop proche
+        if (distance < BALL_RADIUS * 2.5) return null;
+        
+        // Calcul de la puissance en fonction de la distance
+        // Distance courte = puissance faible, distance longue = puissance forte
+        const basePower = 15;
+        const powerFactor = Math.min(distance / 10, 1.5); // Normaliser
+        const power = basePower + powerFactor * 10;
+        
+        return {
+            angle: Math.atan2(shootDir.z, shootDir.x),
+            power: Math.min(power, 25) // Limiter la puissance max
+        };
+    }
+
+    /**
+     * Récupère les billes ciblables pour le joueur actuel
+     * @param {Array} balls - Toutes les billes
+     * @returns {Array} Billes ciblables
+     */
+    getTargets(balls) {
+        // Vérifier si toutes les billes régulières sont empochées
+        const regularBalls = balls.filter(b => b.number !== 0 && b.number !== 8 && !b.inPocket);
+        
+        // Si toutes les billes régulières sont empochées, viser la noire (8)
+        if (regularBalls.length === 0) {
+            const blackBall = balls.find(b => b.number === 8 && !b.inPocket);
+            return blackBall ? [blackBall] : [];
+        }
+        
+        // Sinon, viser les billes régulières (tout sauf blanche et noire)
+        return regularBalls;
+    }
+
+    /**
+     * Retourne les positions des 6 trous
+     * @returns {Array<THREE.Vector3>} Positions des trous
+     */
+    getPockets() {
+        const W = TABLE_W / 2;
+        const H = TABLE_H / 2;
+        const dX = Math.cos(Math.PI / 4) * 0.368; // VAL_OFFSET_CORNER
+        const dZ = Math.sin(Math.PI / 4) * 0.368;
+        const sideOffset = 0.574; // VAL_OFFSET_SIDE
+        
+        return [
+            new THREE.Vector3(-W - dX, 0, -H - dZ),  // Coin haut-gauche
+            new THREE.Vector3(W + dX, 0, -H - dZ),   // Coin haut-droit
+            new THREE.Vector3(0, 0, -H - sideOffset), // Milieu haut
+            new THREE.Vector3(-W - dX, 0, H + dZ),   // Coin bas-gauche
+            new THREE.Vector3(W + dX, 0, H + dZ),    // Coin bas-droit
+            new THREE.Vector3(0, 0, H + sideOffset)  // Milieu bas
+        ];
+    }
+}
+
+
+═══════════════════════════════════════════════════════════════════
+  FICHIER 11/10 : js/botManager.js
+  Lignes :      100
+═══════════════════════════════════════════════════════════════════
+
+// botManager.js
+// Gestion du bot IA dans le jeu
+
+import { SmartBot } from './smartBot.js';
+import { gameState } from './gameState.js';
+
+export class BotManager {
+    constructor() {
+        this.bot = null;
+        this.bot2 = null; // Deuxième bot pour le mode Bot vs Bot
+        this.isEnabled = false;
+        this.botPlayer = 2; // Le bot joue en tant que Joueur 2 par défaut
+        this.difficulty = 0.5; // Difficulté moyenne par défaut
+        this.isBotVsBot = false; // Mode Bot vs Bot
+    }
+
+    /**
+     * Active ou désactive le bot
+     */
+    setEnabled(enabled, difficulty = 0.5) {
+        this.isEnabled = enabled;
+        this.difficulty = difficulty;
+        this.isBotVsBot = false;
+        
+        if (enabled && !this.bot) {
+            this.bot = new SmartBot(difficulty);
+            console.log(`🤖 Bot activé (difficulté: ${(difficulty * 100).toFixed(0)}%)`);
+        } else if (!enabled) {
+            console.log('🤖 Bot désactivé');
+        }
+    }
+
+    /**
+     * Active le mode Bot vs Bot
+     */
+    setBotVsBot(difficulty1 = 0.6, difficulty2 = 0.7) {
+        this.isEnabled = true;
+        this.isBotVsBot = true;
+        this.bot = new SmartBot(difficulty1);
+        this.bot2 = new SmartBot(difficulty2);
+        console.log(`🤖 Mode Bot vs Bot activé`);
+        console.log(`   Bot 1 (Joueur 1): ${(difficulty1 * 100).toFixed(0)}%`);
+        console.log(`   Bot 2 (Joueur 2): ${(difficulty2 * 100).toFixed(0)}%`);
+    }
+
+    /**
+     * Change la difficulté du bot
+     */
+    setDifficulty(difficulty) {
+        this.difficulty = difficulty;
+        if (this.bot) {
+            this.bot.difficulty = difficulty;
+            console.log(`🤖 Difficulté du bot: ${(difficulty * 100).toFixed(0)}%`);
+        }
+    }
+
+    /**
+     * Définit quel joueur est le bot
+     */
+    setBotPlayer(playerNumber) {
+        this.botPlayer = playerNumber;
+        console.log(`🤖 Le bot joue en tant que Joueur ${playerNumber}`);
+    }
+
+    /**
+     * Vérifie si c'est au tour du bot de jouer
+     */
+    shouldBotPlay() {
+        if (!this.isEnabled || !gameState.isIdle()) return false;
+        
+        // Mode Bot vs Bot : les deux joueurs sont des bots
+        if (this.isBotVsBot) return true;
+        
+        // Mode PvE : seulement le botPlayer est un bot
+        return gameState.getCurrentPlayer() === this.botPlayer;
+    }
+
+    /**
+     * Fait jouer le bot
+     */
+    async playBotTurn(whiteBall, balls, shootCallback) {
+        if (!this.shouldBotPlay()) return;
+        
+        const currentPlayer = gameState.getCurrentPlayer();
+        
+        // Mode Bot vs Bot : choisir le bon bot
+        if (this.isBotVsBot) {
+            const activeBot = currentPlayer === 1 ? this.bot : this.bot2;
+            console.log(`🤖 Bot ${currentPlayer} réfléchit...`);
+            await activeBot.playTurn(whiteBall, balls, shootCallback);
+        } else {
+            // Mode PvE : un seul bot
+            console.log(`🤖 C'est au tour du bot (Joueur ${this.botPlayer})`);
+            await this.bot.playTurn(whiteBall, balls, shootCallback);
+        }
+    }
+}
+
+// Instance singleton
+export const botManager = new BotManager();
+
+
+═══════════════════════════════════════════════════════════════════
+  FICHIER 12/10 : js/ui.js
+  Lignes :      200
 ═══════════════════════════════════════════════════════════════════
 
 // ui.js
@@ -976,12 +1842,15 @@ export function updatePhysics(balls, dt, turnInfo = null) {
 
 import * as THREE from 'three';
 import GUI from 'lil-gui';
-import { BALL_RADIUS } from './constants.js';
+import { BALL_RADIUS, TABLE_W, TABLE_H } from './constants.js';
 import { gameState, GameStates } from './gameState.js';
+import { PhysicsSimulator } from './simulator.js';
 
 // Variables globales
 let scene, camera, controls, whiteBall, cueStick, aimLine;
 let params = null;
+let simulator = new PhysicsSimulator();
+let guideLines = [];
 
 // État de la souris
 const mouseState = {
@@ -1011,22 +1880,9 @@ export function updateWhiteBall(wb) {
 }
 
 export function setupGUI(params) {
-    const gui = new GUI({ title: 'Billard Physique' });
-    
-    gui.add(params, 'cueHeight', -BALL_RADIUS * 0.8, BALL_RADIUS * 0.8)
-        .name('↕ Point d\'impact')
-        .onChange(() => {
-            if (cueStick.visible) cueStick.position.y = BALL_RADIUS + params.cueHeight;
-        });
-    
-    gui.add(params, 'maxPower', 10, 50).name('Puissance Max');
-    
-    const f = gui.addFolder('Réglages Physique').close();
-    f.add(params, 'muSlide', 0.05, 0.5).name('Frottement Tapis');
-    f.add(params, 'muRoll', 0.001, 0.1).name('Résist. Roulement');
-    f.add(params, 'restitution', 0.1, 1.0).name('Rebond Billes');
-    f.add(params, 'wallRestitution', 0.1, 1.0).name('Rebond Bandes');
-    
+    const gui = new GUI({ title: 'Billard Pro' });
+    gui.add(params, 'cueHeight', -BALL_RADIUS * 0.8, BALL_RADIUS * 0.8).name('Effet (Haut/Bas)');
+    gui.add(params, 'showDebug').name('Ligne de visée (Cheat)').onChange(v => clearGuideLines());
     return gui;
 }
 
@@ -1035,6 +1891,28 @@ export function setupEventListeners() {
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
+    
+    // --- SUPPORT MOBILE (TOUCH) ---
+    window.addEventListener('touchstart', (e) => {
+        if(e.touches.length > 0) {
+            const touch = e.touches[0];
+            const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, target: e.target };
+            onMouseDown(fakeEvent);
+        }
+    }, {passive: false});
+
+    window.addEventListener('touchmove', (e) => {
+        if(e.touches.length > 0) {
+            const touch = e.touches[0];
+            const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY };
+            onMouseMove(fakeEvent);
+        }
+    }, {passive: false});
+
+    window.addEventListener('touchend', (e) => {
+        onMouseUp();
+    });
+
     window.addEventListener('keydown', (e) => {
         if (e.code === 'Space') window.resetGame();
     });
@@ -1042,7 +1920,8 @@ export function setupEventListeners() {
 
 // --- LOGIQUE CAMERA & VISÉE ---
 function onMouseDown(e) {
-    // Only allow interaction when game is idle (not in menu, pause, settings, etc)
+    // Si on clique sur l'interface (boutons), on ignore
+    if (e.target.closest && (e.target.closest('button') || e.target.closest('.screen'))) return;
     if (!gameState.canAim() || !gameState.isPlaying()) return;
     
     updateMouse(e);
@@ -1065,28 +1944,19 @@ function onMouseDown(e) {
     }
 }
 
-function focusCameraOnTarget(target) {
+export function focusCameraOnTarget(target) {
     const direction = new THREE.Vector3().subVectors(target.pos, whiteBall.pos).normalize();
     const angle = Math.atan2(direction.z, direction.x);
     mouseState.angle = angle;
     
+    // Position caméra type "TV Broadcast"
     const camPos = whiteBall.pos.clone()
-        .sub(direction.clone().multiplyScalar(8))
-        .add(new THREE.Vector3(0, 10, 0));
+        .sub(direction.clone().multiplyScalar(7))
+        .add(new THREE.Vector3(0, 8, 0));
     
     camera.position.copy(camPos);
     controls.target.copy(whiteBall.pos);
     controls.update();
-    
-    cueStick.visible = true;
-    cueStick.position.copy(whiteBall.pos);
-    cueStick.position.y = BALL_RADIUS + params.cueHeight;
-    cueStick.rotation.y = -angle - Math.PI / 2;
-    cueStick.translateZ(0.2);
-    
-    aimLine.visible = true;
-    aimLine.position.copy(whiteBall.pos);
-    aimLine.rotation.y = -angle;
 }
 
 function onMouseMove(e) {
@@ -1098,7 +1968,7 @@ function onMouseMove(e) {
     
     const v = new THREE.Vector3().subVectors(whiteBall.pos, mouseState.currentPos);
     const angle = Math.atan2(v.z, v.x);
-    const dist = Math.min(v.length() * 4, params.maxPower);
+    const dist = Math.min(v.length() * 3, params.maxPower);
     
     mouseState.angle = angle;
     mouseState.power = dist;
@@ -1106,15 +1976,49 @@ function onMouseMove(e) {
     cueStick.position.copy(whiteBall.pos);
     cueStick.position.y = BALL_RADIUS + params.cueHeight;
     cueStick.rotation.y = -angle - Math.PI / 2;
-    cueStick.translateZ(dist * 0.1);
+    cueStick.translateZ(dist * 0.1 + 0.2);
 
     aimLine.position.copy(whiteBall.pos);
     aimLine.rotation.y = -angle;
+
+    // --- LE POUVOIR : Visualisation de trajectoire (Simulation) ---
+    if (params.showDebug) {
+        updatePredictionLine();
+    }
+}
+
+function updatePredictionLine() {
+    const result = simulator.simulateShot(
+        mouseState.angle,
+        mouseState.power,
+        params.cueHeight,
+        window.balls,
+        window.whiteBall
+    );
+
+    clearGuideLines();
+    const material = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 });
+    
+    if (result.finalWhitePos) {
+        const points = [whiteBall.pos.clone(), result.finalWhitePos];
+        points.forEach(p => p.y = BALL_RADIUS);
+        
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
+        guideLines.push(line);
+    }
+}
+
+function clearGuideLines() {
+    guideLines.forEach(l => scene.remove(l));
+    guideLines = [];
 }
 
 function onMouseUp() {
     if (!mouseState.isAiming) return;
     
+    clearGuideLines();
     window.shootBall(mouseState.angle, mouseState.power);
     mouseState.isAiming = false;
     gameState.setState(GameStates.SHOOTING);
@@ -1136,14 +2040,15 @@ function onResize() {
 
 
 ═══════════════════════════════════════════════════════════════════
-  FICHIER 9/10 : js/menuManager.js
-  Lignes :      222
+  FICHIER 13/10 : js/menuManager.js
+  Lignes :      242
 ═══════════════════════════════════════════════════════════════════
 
 // menuManager.js
 // Gestion des écrans UI, transitions et logique de menu
 
 import { gameState, GameStates } from './gameState.js';
+import { botManager } from './botManager.js';
 
 // Settings
 export const settings = {
@@ -1289,12 +2194,31 @@ export function triggerGameOver(isWin, reason) {
 
 // Configuration des événements UI
 export function setupUI() {
-    // MENU
-    document.getElementById('btn-play').onclick = () => {
+    // MENU - Mode de jeu
+    // 1 JOUEUR (PvE)
+    document.getElementById('btn-pve').onclick = () => {
+        botManager.setEnabled(true, 0.6);
+        botManager.setBotPlayer(2);
+        startGame();
+    };
+
+    // 2 JOUEURS (PvP)
+    document.getElementById('btn-pvp').onclick = () => {
+        botManager.setEnabled(false);
+        startGame();
+    };
+
+    // BOT vs BOT (Mode spectateur)
+    document.getElementById('btn-bot-vs-bot').onclick = () => {
+        botManager.setBotVsBot(0.6, 0.7); // Bot 1: 60%, Bot 2: 70%
+        startGame();
+    };
+
+    function startGame() {
         if (onResetCallback) onResetCallback();
         switchState(GameStates.IDLE);
         if (onPlayCallback) onPlayCallback();
-    };
+    }
     
     document.getElementById('btn-settings').onclick = () => {
         previousState = GameStates.MENU; // Vient du menu principal
@@ -1365,8 +2289,8 @@ export function setupUI() {
 
 
 ═══════════════════════════════════════════════════════════════════
-  FICHIER 10/10 : js/main.js
-  Lignes :      321
+  FICHIER 14/10 : js/main.js
+  Lignes :      350
 ═══════════════════════════════════════════════════════════════════
 
 // main.js
@@ -1381,6 +2305,7 @@ import { setupGUI, setupEventListeners, setGlobalVariables, updateWhiteBall } fr
 import { TABLE_W, TABLE_H, BALL_RADIUS, INERTIA, BALL_MASS } from './constants.js';
 import { gameState, GameStates } from './gameState.js';
 import { setupUI, switchState, triggerGameOver, setMenuCallbacks, updateHUD } from './menuManager.js';
+import { botManager } from './botManager.js';
 
 // --- PARAMÈTRES MODIFIABLES ---
 export const params = {
@@ -1420,13 +2345,25 @@ function init() {
     renderer.shadowMap.enabled = true;
     document.body.appendChild(renderer.domElement);
 
-    // Lumières
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const light = new THREE.SpotLight(0xffffff, 800);
-    light.position.set(0, 15, 0);
-    light.castShadow = true;
-    light.shadow.mapSize.set(2048, 2048);
-    scene.add(light);
+    // Lumières - Éclairage amélioré pour bien voir le modèle
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));  // Augmenté de 0.4 à 0.6
+    
+    // Lumière principale (au-dessus)
+    const mainLight = new THREE.SpotLight(0xffffff, 1200);  // Augmenté de 800 à 1200
+    mainLight.position.set(0, 15, 0);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.set(2048, 2048);
+    mainLight.angle = Math.PI / 3;  // Angle plus large
+    scene.add(mainLight);
+    
+    // Lumières d'appoint pour éviter les zones trop sombres
+    const fillLight1 = new THREE.DirectionalLight(0xffffff, 0.3);
+    fillLight1.position.set(10, 10, 10);
+    scene.add(fillLight1);
+    
+    const fillLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+    fillLight2.position.set(-10, 10, -10);
+    scene.add(fillLight2);
 
     // Configuration
     setBallParams(params);
@@ -1528,6 +2465,13 @@ export function resetGame() {
 function onGameStart() {
     // Called when game starts from menu
     console.log('Game started!');
+    
+    // Si c'est le mode Bot vs Bot ou si le Bot 1 doit jouer, le déclencher
+    if (botManager.shouldBotPlay()) {
+        setTimeout(() => {
+            botManager.playBotTurn(whiteBall, balls, shootBall);
+        }, 1000); // Petit délai pour que le joueur voie la table
+    }
 }
 
 export function resetWhiteBall() {
@@ -1567,6 +2511,9 @@ export function shootBall(angle, power) {
     // Angular Acc = Torque / Inertia -> AngVel += Angular Acc * dt (impulse approximation)
     const impulseDt = 0.01; // Temps de contact fictif
     whiteBall.angVel.add(torque.divideScalar(INERTIA).multiplyScalar(impulseDt));
+    
+    // IMPORTANT : Changer l'état en SHOOTING pour que la physique détecte la fin du mouvement
+    gameState.setState(GameStates.SHOOTING);
 }
 
 // --- MOTEUR PHYSIQUE ---
@@ -1612,41 +2559,39 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// --- DETECTION FIN DE PARTIE ---
+// --- DETECTION FIN DE PARTIE (CORRIGÉE - Règles WPA 8-Ball) ---
 function checkWinCondition() {
-    // Only check during gameplay
+    // On ne vérifie que si le jeu est en cours
     if (!gameState.isPlaying()) return;
     
-    // 1. Si la blanche est tombée -> Perdu
-    if (whiteBall.inPocket) {
-        triggerGameOver(false, "Faute : Blanche empochée !");
-        return;
-    }
-
-    // 2. Si la noire (8) est tombée
     const blackBall = balls.find(b => b.number === 8);
+
+    // CAS CRITIQUE : La Noire est tombée
     if (blackBall && blackBall.inPocket) {
-        // Check if all other balls (except white and black) are pocketed
+        
+        // 1. Si la Blanche est AUSSI tombée en même temps -> DÉFAITE
+        if (whiteBall.inPocket) {
+            triggerGameOver(false, "DÉFAITE : Blanche et Noire empochées !");
+            return;
+        }
+
+        // 2. Vérifier si le joueur avait le droit de rentrer la noire
+        // (Toutes les autres billes - sauf blanche et noire - doivent être rentrées)
         const otherBalls = balls.filter(b => b.number !== 0 && b.number !== 8);
         const allOthersPocketed = otherBalls.every(b => b.inPocket);
         
         if (allOthersPocketed) {
-            triggerGameOver(true, "Parfait ! Toutes les billes empochées !");
+            triggerGameOver(true, "VICTOIRE ! Table nettoyée.");
         } else {
-            triggerGameOver(false, "Noire empochée trop tôt !");
+            triggerGameOver(false, "DÉFAITE : Noire empochée trop tôt !");
         }
         return;
     }
     
-    // 3. Logic simple : Si toutes les billes (sauf blanche et noire) sont rentrées
-    const regularBalls = balls.filter(b => b.number !== 0 && b.number !== 8);
-    const allRegularsPocketed = regularBalls.every(b => b.inPocket);
-    
-    if (allRegularsPocketed && blackBall && !blackBall.inPocket) {
-        // All regular balls pocketed, only black ball remains
-        // Player can now try to pocket the black ball
-        console.log('Toutes les billes empochées sauf la noire !');
-    }
+    // Si SEULEMENT la blanche est tombée :
+    // Ce n'est PAS un Game Over. C'est juste une faute.
+    // La fonction handleTurnEnd() s'occupera de passer la main à l'adversaire.
+    // Et physics.js s'occupera de remettre la blanche sur la table via le setTimeout.
 }
 
 // --- GESTION DES TOURS (2 JOUEURS) ---
@@ -1689,6 +2634,14 @@ function handleTurnEnd() {
     
     console.log(`Fin du tour. Empochées: ${turnInfo.ballsPotted.length}. Faute: ${turnInfo.whiteScratched}. Prochain: J${gameState.getCurrentPlayer()}`);
     if (message) console.log(message);
+    
+    // NOUVEAU : Vérifier si c'est au tour du bot
+    if (botManager.shouldBotPlay()) {
+        // Petit délai pour que le joueur voie le changement
+        setTimeout(() => {
+            botManager.playBotTurn(whiteBall, balls, shootBall);
+        }, 500);
+    }
 }
 
 
@@ -1697,7 +2650,7 @@ function handleTurnEnd() {
 ═══════════════════════════════════════════════════════════════════
 
 Statistiques:
-  - Fichiers compilés : 10/10
-  - Lignes totales    : 1614
-  - Date              : 11/12/2025 21:07:35
+  - Fichiers compilés : 14/10
+  - Lignes totales    : 2539
+  - Date              : 13/12/2025 05:55:28
 

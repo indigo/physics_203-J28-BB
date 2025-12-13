@@ -2,6 +2,7 @@
 // Gestion des écrans UI, transitions et logique de menu
 
 import { gameState, GameStates } from './gameState.js';
+import { botManager } from './botManager.js';
 
 // Settings
 export const settings = {
@@ -147,12 +148,31 @@ export function triggerGameOver(isWin, reason) {
 
 // Configuration des événements UI
 export function setupUI() {
-    // MENU
-    document.getElementById('btn-play').onclick = () => {
+    // MENU - Mode de jeu
+    // 1 JOUEUR (PvE)
+    document.getElementById('btn-pve').onclick = () => {
+        botManager.setEnabled(true, 0.6);
+        botManager.setBotPlayer(2);
+        startGame();
+    };
+
+    // 2 JOUEURS (PvP)
+    document.getElementById('btn-pvp').onclick = () => {
+        botManager.setEnabled(false);
+        startGame();
+    };
+
+    // BOT vs BOT (Mode spectateur)
+    document.getElementById('btn-bot-vs-bot').onclick = () => {
+        botManager.setBotVsBot(0.6, 0.7); // Bot 1: 60%, Bot 2: 70%
+        startGame();
+    };
+
+    function startGame() {
         if (onResetCallback) onResetCallback();
         switchState(GameStates.IDLE);
         if (onPlayCallback) onPlayCallback();
-    };
+    }
     
     document.getElementById('btn-settings').onclick = () => {
         previousState = GameStates.MENU; // Vient du menu principal

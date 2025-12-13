@@ -222,7 +222,7 @@ function createHoles(scene) {
     
     pp.forEach(p => {
         const m = new THREE.Mesh(holeGeo, holeMat);
-        m.position.set(p.x, -0.25, p.z);  // Légèrement plus bas pour éviter le z-fighting
+        m.position.set(p.x, -0.2, p.z);  // Légèrement plus bas pour éviter le z-fighting
         m.renderOrder = -1;  // Rendre en premier pour éviter les conflits
         scene.add(m);
     });

@@ -10,6 +10,7 @@ import { setupGUI, setupEventListeners, setGlobalVariables, updateWhiteBall } fr
 import { TABLE_W, TABLE_H, BALL_RADIUS, INERTIA, BALL_MASS } from './constants.js';
 import { gameState, GameStates } from './gameState.js';
 import { setupUI, switchState, triggerGameOver, setMenuCallbacks, updateHUD } from './menuManager.js';
+import { botManager } from './botManager.js';
 
 // --- PARAMÈTRES MODIFIABLES ---
 export const params = {
@@ -169,6 +170,13 @@ export function resetGame() {
 function onGameStart() {
     // Called when game starts from menu
     console.log('Game started!');
+    
+    // Si c'est le mode Bot vs Bot ou si le Bot 1 doit jouer, le déclencher
+    if (botManager.shouldBotPlay()) {
+        setTimeout(() => {
+            botManager.playBotTurn(whiteBall, balls, shootBall);
+        }, 1000); // Petit délai pour que le joueur voie la table
+    }
 }
 
 export function resetWhiteBall() {
@@ -208,6 +216,9 @@ export function shootBall(angle, power) {
     // Angular Acc = Torque / Inertia -> AngVel += Angular Acc * dt (impulse approximation)
     const impulseDt = 0.01; // Temps de contact fictif
     whiteBall.angVel.add(torque.divideScalar(INERTIA).multiplyScalar(impulseDt));
+    
+    // IMPORTANT : Changer l'état en SHOOTING pour que la physique détecte la fin du mouvement
+    gameState.setState(GameStates.SHOOTING);
 }
 
 // --- MOTEUR PHYSIQUE ---
@@ -253,41 +264,39 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// --- DETECTION FIN DE PARTIE ---
+// --- DETECTION FIN DE PARTIE (CORRIGÉE - Règles WPA 8-Ball) ---
 function checkWinCondition() {
-    // Only check during gameplay
+    // On ne vérifie que si le jeu est en cours
     if (!gameState.isPlaying()) return;
     
-    // 1. Si la blanche est tombée -> Perdu
-    if (whiteBall.inPocket) {
-        triggerGameOver(false, "Faute : Blanche empochée !");
-        return;
-    }
-
-    // 2. Si la noire (8) est tombée
     const blackBall = balls.find(b => b.number === 8);
+
+    // CAS CRITIQUE : La Noire est tombée
     if (blackBall && blackBall.inPocket) {
-        // Check if all other balls (except white and black) are pocketed
+        
+        // 1. Si la Blanche est AUSSI tombée en même temps -> DÉFAITE
+        if (whiteBall.inPocket) {
+            triggerGameOver(false, "DÉFAITE : Blanche et Noire empochées !");
+            return;
+        }
+
+        // 2. Vérifier si le joueur avait le droit de rentrer la noire
+        // (Toutes les autres billes - sauf blanche et noire - doivent être rentrées)
         const otherBalls = balls.filter(b => b.number !== 0 && b.number !== 8);
         const allOthersPocketed = otherBalls.every(b => b.inPocket);
         
         if (allOthersPocketed) {
-            triggerGameOver(true, "Parfait ! Toutes les billes empochées !");
+            triggerGameOver(true, "VICTOIRE ! Table nettoyée.");
         } else {
-            triggerGameOver(false, "Noire empochée trop tôt !");
+            triggerGameOver(false, "DÉFAITE : Noire empochée trop tôt !");
         }
         return;
     }
     
-    // 3. Logic simple : Si toutes les billes (sauf blanche et noire) sont rentrées
-    const regularBalls = balls.filter(b => b.number !== 0 && b.number !== 8);
-    const allRegularsPocketed = regularBalls.every(b => b.inPocket);
-    
-    if (allRegularsPocketed && blackBall && !blackBall.inPocket) {
-        // All regular balls pocketed, only black ball remains
-        // Player can now try to pocket the black ball
-        console.log('Toutes les billes empochées sauf la noire !');
-    }
+    // Si SEULEMENT la blanche est tombée :
+    // Ce n'est PAS un Game Over. C'est juste une faute.
+    // La fonction handleTurnEnd() s'occupera de passer la main à l'adversaire.
+    // Et physics.js s'occupera de remettre la blanche sur la table via le setTimeout.
 }
 
 // --- GESTION DES TOURS (2 JOUEURS) ---
@@ -330,4 +339,12 @@ function handleTurnEnd() {
     
     console.log(`Fin du tour. Empochées: ${turnInfo.ballsPotted.length}. Faute: ${turnInfo.whiteScratched}. Prochain: J${gameState.getCurrentPlayer()}`);
     if (message) console.log(message);
+    
+    // NOUVEAU : Vérifier si c'est au tour du bot
+    if (botManager.shouldBotPlay()) {
+        // Petit délai pour que le joueur voie le changement
+        setTimeout(() => {
+            botManager.playBotTurn(whiteBall, balls, shootBall);
+        }, 500);
+    }
 }
