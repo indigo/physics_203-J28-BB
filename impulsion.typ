@@ -114,35 +114,20 @@
   - Si $v_"rel" = 0$ : Ils glissent l'un à côté de l'autre sans s'écraser.
 ]
 
-#definition-box(title: "Partie 3 : La Démonstration Complète")[
+#definition-box(title: "Application de l'Impulsion")[
   Cherchons l'intensité de l'impulsion $j$ (scalaire) à appliquer le long de la normale pour satisfaire la loi du rebond.
   
-  *Étape A : Application de l'Impulsion*
   On applique $j$ sur la boule A et $-j$ sur la boule B (3ème loi de Newton).
   Les nouvelles vitesses ($v'$) sont :
   $ v'_A = v_A + j/m_A quad "et" quad v'_B = v_B - j/m_B $
-  
-  *Étape B : Calcul de la nouvelle vitesse relative*
-  On cherche $v'_"rel" = v'_A - v'_B$.
-  $ v'_"rel" = (v_A + j/m_A) - (v_B - j/m_B) $
-  
-  Regroupons les termes de vitesse et les termes d'impulsion :
-  $ v'_"rel" = underbrace((v_A - v_B), v_"rel") + j(1/m_A + 1/m_B) $
-  
-  *Étape C : On impose la Loi du Rebond*
-  On remplace $v'_"rel"$ par ce qu'on veut obtenir ($-e dot v_"rel"$) :
-  $ -e dot v_"rel" = v_"rel" + j(1/m_A + 1/m_B) $
-  
-  *Étape D : On isole $j$*
-  1. Passons $v_"rel"$ à gauche :
-     $ -e dot v_"rel" - v_"rel" = j(1/m_A + 1/m_B) $
-  2. Factorisons $v_"rel"$ :
-     $ -(1+e)v_"rel" = j(1/m_A + 1/m_B) $
-]
 
-#important-box(title: "Partie 4 : Simplification (Masse Réduite)")[
-  Nous avons obtenu :
-  $ j = (-(1+e)v_"rel") / (1/m_A + 1/m_B) $
+En passant par les impulsions, on peut effectuer un changement de vitesse instantané, sans passer par l'accélération.
+
+]
+    *Calcul de la valeur de l'impulsion*
+  
+  Voici la formule de base pour calculer l'impulsion :
+  $ bold(j = (-(1+e)v_"rel") / (1/m_A + 1/m_B)) $
   
   Le terme au dénominateur $(1/m_A + 1/m_B)$ est peu intuitif. Transformons-le.
   Mise au même dénominateur :
@@ -156,8 +141,9 @@
   
   Ce qui nous donne la *Formule Finale* très élégante :
   
-  $ j = underbrace(-(1+e) v_"rel", "Vitesse à changer") dot underbrace(((m_A m_B) / (m_A + m_B)), "Masse Équivalente") $
-]
+
+  $ bold(j = underbrace(-(1+e) v_"rel", "Vitesse à changer") dot underbrace(((m_A m_B) / (m_A + m_B)), "Masse Équivalente")) $
+
 
 #tip-box(title: "Interprétation Physique")[
   Cette forme $ (m_A m_B)/(m_A + m_B) $ est appelée la *Masse Réduite* du système.
