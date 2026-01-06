@@ -128,18 +128,31 @@
 ]
 
 #definition-box(title: "Solution 5 : Le Sniper")[
-  *Formule de Portée :*
-  Pour un tir parabolique sur sol plat ($y=0$), la portée $R$ est :
-  $ R = (v_0^2 sin(2 theta)) / g $
-  
-  *Application Numérique :*
-  $ v_0 = 50 $, $ theta = 45 degree $, $ g = 9.81 $.
-  $ sin(2 times 45) = sin(90) = 1 $.
-  
-  $ R = (50^2 times 1) / 9.81 = 2500 / 9.81 approx 254.8 "mètres" $
-  
-  *Note Code :* Si Euler donne une valeur très différente (ex: 260m), c'est que le $Delta t$ (pas de temps) est trop grand ! Essayez de le réduire.
+
+  *1. Décomposition de la vitesse initiale ($t=0$)* \
+  Avec $v_0 = 50$ m/s et $theta = 45 degree$ :
+  $ v_{0x} = v_0 cos(theta) = 50 times 0.707 approx 35.35 "m/s" $
+  $ v_{0y} = v_0 sin(theta) = 50 times 0.707 approx 35.35 "m/s" $
+
+  *2. Équations de position (au temps $t$)* \
+  On néglige les frottements. L'accélération ne joue que sur la hauteur ($y$) :
+  - Horizontal : $x(t) = v_{0x} times t$
+  - Vertical : $y(t) = v_{0y} times t - 1/2 g t^2$
+
+  *3. Calcul du temps de vol ($t_{"vol"}$)* \
+  Le projectile touche le sol quand $y(t) = 0$ (pour $t > 0$) :
+  $ 35.35 t - 0.5 times 9.81 times t^2 = 0 $
+  $ t times (35.35 - 4.905 t) = 0 $
+  $ t_{"vol"} = 35.35 / 4.905 approx 7.207 "secondes" $
+
+  *4. Calcul de la portée ($R$)* \
+  C'est la distance parcourue horizontalement pendant le temps de vol :
+  $ R = x(t_{"vol"}) = 35.35 "m/s" times 7.207 "s" approx 254.8 "mètres" $
+
+  *Note Code :* Si votre simulation (Euler) donne une valeur éloignée (ex: 260m), c'est que votre pas de temps $Delta t$ est trop grand pour capter précisément l'instant $t_{"vol"}$.
 ]
+  
+
 
 #definition-box(title: "Solution 6 : Le Cube (Logique Code)")[
   *Algorithme à implémenter dans `updatePhysics` :*

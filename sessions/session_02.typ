@@ -4,21 +4,27 @@
 
 = Session 2 : Cinématique 2D et Mouvement de Projectile
 
-== Objectifs de la Session :
+== Résumé de la Session :
 
-- Comprendre et appliquer les concepts de vitesse, d'accélération et de position en deux dimensions.
-- Analyser et calculer la trajectoire d'un projectile soumis à la gravité.
-- Implémenter le mouvement de projectiles dans l'environnement Three.js.
-- Réaliser un premier travail pratique de création d'objets en mouvement et de projectiles simples sans moteur physique, en utilisant uniquement les équations de la cinématique.
+- *Introduction à la cinématique :*
+  - Branche de la mécanique qui décrit le mouvement des objets sans considérer les causes du mouvement (les forces).
+  - Contrairement à la dynamique, qui relie le mouvement aux forces.
+  - Notre objectif dans ce bloc est de développer les outils mathématiques pour décrire précisément _comment_ les objets se déplacent.
 
-== Bloc 1 : Cinématique 2D - Position, Vitesse et Accélération
+La position, la vitesse et l'accélération sont des concepts qui permettent de décrire précisément comment un objet se comporte.
 
-*Objectifs spécifiques de ce bloc :*
+La relation entre ces concepts est la suivante :
 
-- Comprendre la représentation mathématique de la position d'un objet dans un plan bidimensionnel.
-- Définir et interpréter les concepts de vitesse moyenne et instantanée sous forme vectorielle en 2D.
-- Définir et interpréter les concepts d'accélération moyenne et instantanée sous forme vectorielle en 2D.
-- Visualiser et relier les vecteurs position, vitesse et accélération à la trajectoire d'un objet.
+- La position est le vecteur qui indique la localisation d'un point dans l'espace.
+- La vitesse est le vecteur qui indique la vitesse du point, il est défini comme la variation (dérivée) de la position par rapport au temps.
+- L'accélération est le vecteur qui indique l'accélération du point, il est défini comme la variation (dérivée) de la vitesse par rapport au temps.
+
+Lorsque la position est constante, le point est au repos, immobile. Sa vitesse et son accélération sont nulles.
+
+Lorsque la vitesse est constante, le point se déplace à vitesse constante en ligne droite. Son accélération est nulle.
+
+Lorsque l'accélération est constante, la vitesse augmente constamment,
+le point se déplace de plus en plus vite.
 
 === 1. Introduction et Rappels
 
@@ -30,10 +36,7 @@
     $ arrow(a) - arrow(b) = vec(a_x - b_x, a_y - b_y) $
   - Multiplication d'un vecteur par un scalaire : $ k arrow(a) = vec(k a_x, k a_y) $.
 
-- *Introduction à la cinématique :*
-  - Branche de la mécanique qui décrit le mouvement des objets sans considérer les causes du mouvement (les forces).
-  - Contrairement à la dynamique, qui relie le mouvement aux forces.
-  - Notre objectif dans ce bloc est de développer les outils mathématiques pour décrire précisément _comment_ les objets se déplacent en 2D.
+
 
 === 2. Position en 2D
 
@@ -54,12 +57,21 @@
   )
 
 - *Trajectoire :*
-  - Si la position d'un objet change au cours du temps, nous pouvons décrire son mouvement en spécifiant son vecteur position en fonction du temps : $arrow(r)(t) = vec(x(t), y(t))$.
+  - Si la position d'un objet change au cours du temps, nous pouvons décrire son mouvement en spécifiant son vecteur position en fonction du temps : 
+  
+  $ arrow(r)(t) = vec(x(t), y(t)) $.
   - L'ensemble des points atteints par l'objet au cours de son mouvement forme sa *trajectoire*. La trajectoire est une courbe dans l'espace (ici, en 2D).
+  
   - Exemples de trajectoires :
-    - *Mouvement rectiligne uniforme :* $arrow(r)(t) = vec(x_0 + v_x t, y_0 + v_y t)$, où $x_0, y_0, v_x, v_y$ sont des constantes. La trajectoire est une ligne droite.
-    - *Mouvement circulaire uniforme :* $arrow(r)(t) = vec(R cos(omega t), R sin(omega t))$, où $R$ est le rayon et $omega$ la vitesse angulaire. La trajectoire est un cercle.
-    - *Mouvement parabolique (projectile) :* $arrow(r)(t) = vec(v_(0x) t, y_0 + v_(0y) t - 1/2 g t^2)$ (sous l'effet de la gravité). La trajectoire est une parabole.
+    - *Mouvement rectiligne uniforme :* 
+    
+    $arrow(r)(t) = vec(x_0 + v_x t, y_0 + v_y t)$, 
+    
+    où $x_0, y_0, v_x, v_y$ sont des constantes. La trajectoire est une ligne droite.
+    - *Mouvement circulaire uniforme :* 
+    $arrow(r)(t) = vec(R cos(omega t), R sin(omega t))$, où $R$ est le rayon et $omega$ la vitesse angulaire. La trajectoire est un cercle.
+    - *Mouvement parabolique (projectile) :* 
+    $arrow(r)(t) = vec(v_(0x) t, y_0 + v_(0y) t - 1/2 g t^2)$ (sous l'effet de la gravité). La trajectoire est une parabole.
   - Visualisation de différentes trajectoires et des vecteurs position correspondants à différents instants.
 
 - *Démo cinématique :* Pour visualiser les concepts de cinématique, consultez la démo : #link("../scenes/session02.html")[file:../scenes/session02.html]
