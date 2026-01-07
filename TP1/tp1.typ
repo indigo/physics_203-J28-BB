@@ -70,22 +70,144 @@
 
 #example(title: "Structure attendue du Spatial Hashing")[
   ```javascript
-  class SpatialGrid {
-    constructor(cellSize) {
-      this.cellSize = cellSize;
-      this.cells = new Map(); 
+import * as THREE from 'three';
+import { OrbitControls } from 'jsm/controls/OrbitControls.js';
+import { GUI } from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
+
+// --- CONFIGURATION ---
+const CUBE_SIZE = 10; // Le cube ira de -5 à 5
+const BALL_RADIUS = 0.2;
+
+let scene, camera, renderer, balls = [];
+let grid; 
+
+const params = {
+    nbBalls: 200,
+    restitution: 0.8,
+    useBroadPhase: true, // Pour comparer !
+    gravity: 0,
+    reset: () => initSimulation()
+};
+
+// --- CLASSE À COMPLÉTER (BROAD PHASE) ---
+class SpatialGrid {
+    constructor(size, cellSize) {
+        this.cellSize = cellSize;
+        this.grid = {}; // Dictionnaire de cellules
     }
-    
-    // Génère une clé unique pour une position (ex: "5|2|-1")
-    getKey(v) {
-      const x = Math.floor(v.x / this.cellSize);
-      const y = Math.floor(v.y / this.cellSize);
-      const z = Math.floor(v.z / this.cellSize);
-      return `${x}|${y}|${z}`;
+
+    // Convertir une position 3D en clé de dictionnaire (ex: "1,2,-1")
+    getKey(pos) {
+        const x = Math.floor(pos.x / this.cellSize);
+        const y = Math.floor(pos.y / this.cellSize);
+        const z = Math.floor(pos.z / this.cellSize);
+        return `${x},${y},${z}`;
     }
+
+    update(balls) {
+        this.grid = {};
+        // 1. [À COMPLÉTER] : Parcourir les boules et les ranger dans les bonnes cases
+    }
+
+    getNeighbors(ball) {
+        // 2. [À COMPLÉTER] : Récupérer les boules dans la case actuelle + 26 cases voisines
+        return balls; // Par défaut renvoie tout (Brute force)
+    }
+}
+
+// --- INITIALISATION ---
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(15, 15, 15);
     
-    // À remplir par l'étudiant...
-  }
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+    
+    // Wireframe du cube conteneur
+    const geo = new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE);
+    const wireframe = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geo),
+        new THREE.LineBasicMaterial({ color: 0xffffff })
+    );
+    scene.add(wireframe);
+
+    grid = new SpatialGrid(CUBE_SIZE, BALL_RADIUS * 4);
+    
+    initSimulation();
+    setupGUI();
+    new OrbitControls(camera, renderer.domElement);
+    animate();
+}
+
+function initSimulation() {
+    // Nettoyage
+    balls.forEach(b => scene.remove(b));
+    balls = [];
+
+    // Création des boules aléatoires
+    for(let i=0; i < params.nbBalls; i++) {
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(BALL_RADIUS),
+            new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff })
+        );
+        mesh.position.set(
+            (Math.random()-0.5) * (CUBE_SIZE - 1),
+            (Math.random()-0.5) * (CUBE_SIZE - 1),
+            (Math.random()-0.5) * (CUBE_SIZE - 1)
+        );
+        mesh.userData.velocity = new THREE.Vector3(
+            (Math.random()-0.5) * 5,
+            (Math.random()-0.5) * 5,
+            (Math.random()-0.5) * 5
+        );
+        mesh.userData.mass = 1;
+        balls.push(mesh);
+        scene.add(mesh);
+    }
+}
+
+function updatePhysics(dt) {
+    // 1. Intégration
+    balls.forEach(b => {
+        b.position.addScaledVector(b.userData.velocity, dt);
+        
+        // 2. Murs (Narrow Phase contre le cube)
+        // [À COMPLÉTER] : Rebond sur les 6 faces avec correction de position
+    });
+
+    // 3. Collisions entre boules
+    if (params.useBroadPhase) {
+        grid.update(balls);
+        balls.forEach(ballA => {
+            const potentialTargets = grid.getNeighbors(ballA);
+            potentialTargets.forEach(ballB => {
+                if (ballA !== ballB) resolveCollision(ballA, ballB);
+            });
+        });
+    } else {
+        // Brute force O(N^2)
+        for(let i=0; i<balls.length; i++) {
+            for(let j=i+1; j<balls.length; j++) {
+                resolveCollision(balls[i], balls[j]);
+            }
+        }
+    }
+}
+
+function resolveCollision(ballA, ballB) {
+    const dist = ballA.position.distanceTo(ballB.position);
+    if (dist > BALL_RADIUS * 2) return;
+
+    // [À COMPLÉTER] : 
+    // 1. Calcul de la normale
+    // 2. Calcul de l'impulsion (J) en 3D
+    // 3. Mise à jour des vitesses
+    // 4. Correction de l'interpénétration (très important pour éviter que les boules collent)
+}
+
+// ... loop et setupGUI ...
   ```
 ]#heading(level: 1)[5. Bonus : Friction et Gravité]
 Ajoutez un curseur de gravité et un coefficient de friction lors des collisions avec les murs pour obtenir un comportement de "tas de sable" au fond de la boîte (+2 pts bonus).
