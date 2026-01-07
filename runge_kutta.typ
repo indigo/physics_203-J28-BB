@@ -35,6 +35,13 @@ $
 // - Jaune (k4) à la fin.
 // Une grosse flèche noire qui est la moyenne des 4 et qui tombe pile sur la courbe.
 
+    #figure(
+      image("./images/Runge-Kutta_slopes.svg", width: 50%),
+      caption: [
+        Runge Kutta : 4 pentes pour une meilleure trajectoire
+      ],
+    )
+
 == 2. Les Mathématiques (L'État du Système)
 
 Pour implémenter RK4 proprement, nous devons regrouper nos variables (Position et Vitesse) dans un seul vecteur que nous appellerons l'**État** ($Y$).
