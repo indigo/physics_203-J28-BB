@@ -1,5 +1,5 @@
 #set text(font: "Linux Libertine", lang: "fr", size: 12pt)
-#set page(paper: "letter", margin: 3cm)
+#set page(paper: "us-letter", margin: 3cm)
 #set par(justify: true)
 
 = Session 3 : Introduction des lois de Newton et la méthode Euler
