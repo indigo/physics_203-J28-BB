@@ -4,7 +4,7 @@
 
 #set document(
   author: ("Richard Rispoli"),
-  title: [Démonstration : L'Impulsion de Collision]
+  title: [L'Impulsion de Collision]
 )
 
 #show title: set align(right)
@@ -39,9 +39,13 @@
 // --- DÉBUT DU DOCUMENT ---
 
 #title()
+  #figure(
+    image("./images/impulsion.svg", width: 80%),
+    caption: [Choc entre deux objets],
+  )
 
 #definition-box(title: "Partie 1 : D'où vient l'Impulsion ? (Le Lien Newtonien)")[
-  La relation $J = Delta p$ n'est pas une invention magique. C'est la 2ème Loi de Newton réécrite sous forme intégrale.
+  La conservation de la quantité de mouvement est une loi fondamentale de la physique, et elle nous permet de calculer facilement les changements de vitesse de 2 objets en collision.
   
   *1. Retour à la définition de la Force*
   L'accélération $arrow(a)$ est la dérivée de la vitesse.
@@ -62,10 +66,8 @@
   $ arrow(J) = Delta arrow(p) $
   
   *Interprétation Géométrique :*
-  L'impulsion est l'*Aire sous la courbe* de la Force en fonction du temps. Peu importe que la force soit petite et longue, ou géante et courte : si l'aire est la même, le changement de vitesse est le même.
-]
+  L'impulsion est l'*Aire sous la courbe* de la Force en fonction du temps. Peu importe que la force soit petite et longue, ou géante et courte : si l'aire est la même, le changement de vitesse à l'instant $t_2$ est le même.
 
-#definition-box(title: "Application au Moteur Physique (Temps Zéro)")[
   Dans une simulation "Narrow Phase", on considère que la collision est instantanée ($Delta t approx 0$).
   
   Si le temps est nul, pour avoir une aire non-nulle, la Force devrait être infinie. L'ordinateur ne peut pas calculer l'infini.
@@ -119,7 +121,7 @@
   
   On applique $j$ sur la boule A et $-j$ sur la boule B (3ème loi de Newton).
   Les nouvelles vitesses ($v'$) sont :
-  $ v'_A = v_A + j/m_A quad "et" quad v'_B = v_B - j/m_B $
+$ bold(v'_A = v_A + j/m_A quad "et" quad v'_B = v_B - j/m_B) $
 
 En passant par les impulsions, on peut effectuer un changement de vitesse instantané, sans passer par l'accélération.
 
