@@ -141,14 +141,42 @@ Le **Soleil** sera placé au centre avec une masse de **333 000** (unités terre
 )
 
 #tip-box(title: "Conseils pour l'échelle du TP")[
-  - **Unités :** Si vous prenez 1 UA = 100 pixels, Neptune sera trop loin (3000 px). Essayez plutôt **1 UA = 20 pixels** ou utilisez un zoom caméra.
-  - **Vitesse initiale :** Pour que la Terre reste en orbite circulaire, sa vitesse de départ doit être perpendiculaire au rayon Soleil-Terre. 
-  - **G :** Réglez votre constante $G$ de sorte que la Terre mette environ 10 secondes à faire un tour complet.
+  - *Unités :* Si vous prenez 1 UA = 100 pixels, Neptune sera trop loin (3000 px). Essayez plutôt **1 UA = 20 pixels** ou utilisez un zoom caméra.
+  - *Vitesse initiale :* Pour que la Terre reste en orbite circulaire, sa vitesse de départ doit être perpendiculaire au rayon Soleil-Terre. 
+  - *G :* Réglez votre constante $G$ de sorte que la Terre mette environ 10 secondes à faire un tour complet.
 ]
 
 #tip-box(title: "Vitesse d'orbite")[
 Pour qu'une planète reste en orbite circulaire, sa vitesse initiale doit être perpendiculaire au rayon Soleil-Terre.
 
-Sa vitesse est donc de $ v = sqrt((G dot M_"soleil") / r) $.
+Sa vitesse doit être : 
 
+$ v = sqrt((G dot M_"soleil") / r) $
+
+]
+
+#important-box(title: "Démonstration")[
+  Dans la session 2 sur la cinématique, nous avons vu que la magnitude de l'accélération centripète est :
+  $ a = ||arrow(a)(t)|| = omega^2 R $
+
+  Comme la vitesse  est $v = omega R$, on peut exprimer l'accélération en fonction de $v$ :
+  $ omega = v / R arrow.long a = (v / R)^2 dot R = v^2 / R $
+
+  *1. La force requise (Newton) :*
+  Pour maintenir ce mouvement circulaire, la nature doit fournir une force :
+  $ F_c = m dot a = (m v^2) / R $
+
+  *2. La force fournie (Gravitation) :*
+  Dans l'espace, c'est la gravité qui joue ce rôle :
+  $ F_g = (G M m) / R^2 $
+
+  *3. L'équilibre orbital :*
+  En égalisant la force requise et la force fournie ($F_c = F_g$) :
+  $ (m v^2) / R = (G M m) / R^2 $
+
+  En simplifiant par la masse de la planète ($m$) et par un rayon ($R$), on obtient :
+  $ v^2 = (G M) / R $
+
+  D'où la **vitesse orbitale circulaire** utilisée dans notre code :
+  $ bold(v = sqrt((G M) / R)) $
 ]
