@@ -145,3 +145,10 @@ Le **Soleil** sera placé au centre avec une masse de **333 000** (unités terre
   - **Vitesse initiale :** Pour que la Terre reste en orbite circulaire, sa vitesse de départ doit être perpendiculaire au rayon Soleil-Terre. 
   - **G :** Réglez votre constante $G$ de sorte que la Terre mette environ 10 secondes à faire un tour complet.
 ]
+
+#tip-box(title: "Vitesse d'orbite")[
+Pour qu'une planète reste en orbite circulaire, sa vitesse initiale doit être perpendiculaire au rayon Soleil-Terre.
+
+Sa vitesse est donc de $ v = sqrt((G dot M_"soleil") / r) $.
+
+]
