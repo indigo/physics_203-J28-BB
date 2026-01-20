@@ -42,6 +42,12 @@ Avant de comparer les moteurs, il faut comprendre les problèmes qu'ils résolve
 #important-box(title: "Le problème du Tunneling (CCD)")[
   Dans notre moteur, si une balle va très vite, elle peut traverser un mur entre deux frames car $P_"old"$ est d'un côté et $P_"new"$ de l'autre.
   
+
+    #figure(
+    image("../images/CCD.svg", width: 80%),
+    caption: [CCD (Continuous Collision Detection) pour éviter le tunneling],
+  )
+
   Les moteurs commerciaux utilisent le *CCD (Continuous Collision Detection)*. Au lieu de regarder des positions discrètes, ils extrudent le volume de l'objet le long de son vecteur vitesse pour vérifier s'il a "balayé" un obstacle.
 ]
 
@@ -81,7 +87,7 @@ Ces moteurs sont les standards de l'industrie pour les jeux PC et Consoles.
 #heading(level: 1)[3. Le Roi de la 2D : Box2D]
 
 #definition-box(title: "Box2D")[
-  Si vous avez joué à *Angry Birds*, *Limbo* ou *Shovel Knight*, vous avez utilisé *Box2D**.
+  Si vous avez joué à *Angry Birds*, *Limbo* ou *Shovel Knight*, vous avez utilisé *Box2D*
   
   Créé par Erin Catto (Blizzard), c'est un moteur "Impulse Based" (comme notre résolution de collision, mais plus mathématique avec des matrices de masse).
   
