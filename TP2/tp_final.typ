@@ -80,15 +80,15 @@
 - Ajouter un clic souris pour tirer.
 - Utiliser un `Raycast` pour viser ou pour appliquer une force d'explosion là où le joueur clique.
 
-#heading(level: 1)[Critères d'évaluation (Total /20)]
+#heading(level: 1)[Critères d'évaluation (Total /30)]
 
 #table(
   columns: (4fr, 1fr),
   inset: 7pt,
   stroke: 0.5pt + gray,
   [*Critère*], [*Points*],
-  [**Intégration Moteur :** La simulation tourne à 60fps, les objets ne passent pas à travers le sol.], [5 pts],
-  [**Stacking :** Le mur de briques est stable au repos (ne tremble pas).], [5 pts],
-  [**Mécanisme (Joints) :** La catapulte fonctionne physiquement (pas d'animation pré-calculée).], [5 pts],
-  [**Gameplay :** On peut tirer et détruire le mur.], [5 pts],
+  [**Intégration Moteur :** La simulation tourne à 60fps, les objets ne passent pas à travers le sol.], [7 pts],
+  [**Stacking :** Le mur de briques est stable au repos (ne tremble pas).], [7 pts],
+  [**Mécanisme (Joints) :** La catapulte fonctionne physiquement (pas d'animation pré-calculée).], [7 pts],
+  [**Gameplay :** On peut tirer et détruire le mur.], [9 pts],
 )

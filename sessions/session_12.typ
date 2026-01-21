@@ -25,8 +25,8 @@
 #tip-box(title: "Introduction")[
   Nous passons maintenant de la théorie (écrire notre propre moteur) à la pratique professionnelle (utiliser un middleware).
   
-  Pour les projets Web/Three.js, nous utiliserons **Rapier** (écrit en Rust, compilé en WASM).
-  Pour les projets C++/Raylib, nous utiliserons **Box2D** ou **PhysX**.
+  Pour les projets Web/Three.js, nous utiliserons *Rapier* (écrit en Rust, compilé en WASM).
+  Pour les projets C++/Raylib, nous utiliserons *Box2D* ou *PhysX*.
   
   Les concepts sont identiques à 99% entre tous ces moteurs.
 ]

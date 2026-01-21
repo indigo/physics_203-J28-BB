@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TP Session 10 - RK4 & Sub-stepping</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        #hud {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            color: #00ffcc; font-family: 'Courier New', Courier, monospace;
+            font-size: 24px; text-shadow: 0 0 10px #00ffcc;
+            pointer-events: none; text-align: center;
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="hud">An 0, Jour 0</div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'jsm/controls/OrbitControls.js';
+        import { GUI } from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
+        import { RGBELoader } from 'jsm/loaders/RGBELoader.js';
+
+        // --- Configuration Physique ---
+        const G = 100;
+        const SUN_MASS = 3330; 
+        const UA_SCALE = 18;
+        const SUB_STEPS = 20; // On calcule la physique 10 fois par frame visuelle
+
+        const DATA = {
+            mercury: { name: "Mercure", mass: 0.055, dist: 0.39, color: 0xAAAAAA, size: 0.4 },
+            venus:   { name: "Vénus",   mass: 0.815, dist: 0.72, color: 0xFFCC33, size: 0.9 },
+            earth:   { name: "Terre",   mass: 1.000, dist: 1.00, color: 0x2277FF, size: 1.0 },
+            mars:    { name: "Mars",    mass: 0.107, dist: 1.52, color: 0xFF4422, size: 0.5 },
+            jupiter: { name: "Jupiter", mass: 317.8, dist: 5.20, color: 0xDDAA88, size: 3.0 },
+            saturne: { name: "Saturne", mass: 95.2,  dist: 9.54, color: 0xCCBB99, size: 2.5 }
+        };
+
+        let camera, scene, renderer, controls;
+        let planets = [];
+        let totalPhysicsTime = 0;
+
+        // Calcul physique de la durée d'une année terrestre en unités de simulation
+        // T = 2 * PI * sqrt( r^3 / (G*M) )
+        const SIM_YEAR_DURATION = 2 * Math.PI * Math.sqrt(Math.pow(UA_SCALE, 3) / (G * SUN_MASS));
+
+        const params = {
+            timeScale: 0.05,
+            showTrails: true,
+            reset: resetSimulation
+        };
+
+        init();
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 4000);
+            camera.position.set(0, 180, 300);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            document.body.appendChild(renderer.domElement);
+
+            const rgbeLoader = new RGBELoader();
+            rgbeLoader.load('./textures/space.hdr', function (texture) {
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                scene.background = texture;
+                scene.environment = texture;
+            });
+
+            const sunLight = new THREE.PointLight(0xffffff, 3000, 30000);
+            scene.add(sunLight);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+
+            createSun();
+            createPlanets();
+            setupGUI();
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            window.addEventListener('resize', onResize);
+            renderer.setAnimationLoop(animate);
+        }
+
+        function createSun() {
+            const geo = new THREE.SphereGeometry(3, 32, 32);
+            const mat = new THREE.MeshStandardMaterial({ emissive: 0xFFCC00, emissiveIntensity: 2 });
+            scene.add(new THREE.Mesh(geo, mat));
+        }
+
+        function createPlanets() {
+            Object.keys(DATA).forEach(key => {
+                const d = DATA[key];
+                const distWorld = d.dist * UA_SCALE;
+                const vOrbit = Math.sqrt((G * SUN_MASS) / distWorld);
+
+                const mesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(d.size * 1.5, 24, 24),
+                    new THREE.MeshStandardMaterial({ color: d.color, metalness: 0.1, roughness: 0.7 })
+                );
+
+                const trailMat = new THREE.LineBasicMaterial({ color: d.color, transparent: true, opacity: 0.3 });
+                const trailMesh = new THREE.Line(new THREE.BufferGeometry(), trailMat);
+                scene.add(trailMesh);
+                scene.add(mesh);
+
+                planets.push({
+                    id: key,
+                    mesh: mesh,
+                    pos: new THREE.Vector3(distWorld, 0, 0),
+                    vel: new THREE.Vector3(0, 0, -vOrbit),
+                    trailPoints: [],
+                    trailMesh: trailMesh
+                });
+            });
+        }
+
+        function getAcceleration(position) {
+            const r2 = position.lengthSq();
+            if (r2 < 5) return new THREE.Vector3(0,0,0);
+            const fMag = (G * SUN_MASS) / r2;
+            return position.clone().negate().normalize().multiplyScalar(fMag);
+        }
+
+        function updatePhysicsRK4(p, dt) {
+            const x0 = p.pos.clone();
+            const v0 = p.vel.clone();
+
+            const a1 = getAcceleration(x0);
+            const k1_v = a1.multiplyScalar(dt);
+            const k1_x = v0.clone().multiplyScalar(dt);
+
+            const x2 = x0.clone().add(k1_x.clone().multiplyScalar(0.5));
+            const v2 = v0.clone().add(k1_v.clone().multiplyScalar(0.5));
+            const a2 = getAcceleration(x2);
+            const k2_v = a2.multiplyScalar(dt);
+            const k2_x = v2.multiplyScalar(dt);
+
+            const x3 = x0.clone().add(k2_x.clone().multiplyScalar(0.5));
+            const v3 = v0.clone().add(k2_v.clone().multiplyScalar(0.5));
+            const a3 = getAcceleration(x3);
+            const k3_v = a3.multiplyScalar(dt);
+            const k3_x = v3.multiplyScalar(dt);
+
+            const x4 = x0.clone().add(k3_x);
+            const v4 = v0.clone().add(k3_v);
+            const a4 = getAcceleration(x4);
+            const k4_v = a4.multiplyScalar(dt);
+            const k4_x = v4.multiplyScalar(dt);
+
+            const final_v = k1_v.add(k2_v.multiplyScalar(2)).add(k3_v.multiplyScalar(2)).add(k4_v).divideScalar(6);
+            const final_x = k1_x.add(k2_x.multiplyScalar(2)).add(k3_x.multiplyScalar(2)).add(k4_x).divideScalar(6);
+
+            p.vel.add(final_v);
+            p.pos.add(final_x);
+        }
+
+        function animate() {
+            // dt par frame visuelle
+            const dtFrame = 0.016 * params.timeScale;
+            // dt par sous-étape
+            const dtSubStep = dtFrame / SUB_STEPS;
+
+            // --- BOUCLE DE SUB-STEPPING ---
+            for (let i = 0; i < SUB_STEPS; i++) {
+                planets.forEach(p => {
+                    updatePhysicsRK4(p, dtSubStep);
+                });
+                totalPhysicsTime += dtSubStep;
+            }
+
+            // Mise à jour visuelle (une fois par rendu)
+            updateHUD();
+
+            planets.forEach(p => {
+                p.mesh.position.copy(p.pos);
+                if (params.showTrails) {
+                    p.trailPoints.push(p.pos.clone());
+                    if (p.trailPoints.length > 1500) p.trailPoints.shift();
+                    p.trailMesh.geometry.setFromPoints(p.trailPoints);
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        function updateHUD() {
+            // Conversion du temps de simulation en années/jours terrestres
+            const years = totalPhysicsTime / SIM_YEAR_DURATION;
+            const currentYear = Math.floor(years);
+            const currentDay = Math.floor((years - currentYear) * 365.25);
+            
+            document.getElementById('hud').innerText = `An ${currentYear}, Jour ${currentDay}`;
+        }
+
+        function resetSimulation() {
+            planets.forEach(p => {
+                scene.remove(p.mesh);
+                scene.remove(p.trailMesh);
+            });
+            planets = [];
+            totalPhysicsTime = 0;
+            createPlanets();
+        }
+
+        function setupGUI() {
+            const gui = new GUI();
+            gui.add(params, 'timeScale', 0.01, 1.5).name('Vitesse Simulation'); // On peut monter plus haut grâce au sub-stepping
+            gui.add(params, 'showTrails').name('Trajectoires');
+            gui.add(params, 'reset').name('Reset');
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>
