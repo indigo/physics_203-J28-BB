@@ -25,7 +25,7 @@
 
 #tip-box(title: "Contexte")[
   Ce TP se déroule sur deux séances (Session 12 et 13).
-  L'objectif est d'abandonner notre moteur "maison" pour utiliser un moteur professionnel (**Rapier** avec Three.js ou **Box2D** avec Raylib).
+  L'objectif est d'abandonner notre moteur "maison" pour utiliser un moteur professionnel (*Rapier* avec Three.js ou *Box2D* avec Raylib).
   
   Vous allez construire un jeu de siège/destruction physique.
 ]
@@ -43,7 +43,7 @@
 
 #heading(level: 2)[2. Le Sol et les Murs (Statics)]
 - Créer un sol plat infini (Collider Plane).
-- Ce corps doit être **STATIQUE** (Masse infinie, ne bouge pas).
+- Ce corps doit être *STATIQUE* (Masse infinie, ne bouge pas).
 - Ajouter des murs invisibles ou visibles pour délimiter la zone de jeu.
 
 #heading(level: 2)[3. Construction du Château (Dynamics)]
@@ -65,9 +65,9 @@
 
 #heading(level: 2)[4. L'Arme de Siège (Joints)]
 - Construire une catapulte composée de plusieurs pièces :
-  - **Base :** Fixe au sol.
-  - **Bras :** Mobile.
-  - **Pivot :** Un `RevoluteJoint` (Hinge) qui relie la Base et le Bras.
+  - * Base :* Fixe au sol.
+  - *Bras :* Mobile.
+  - *Pivot :* Un `RevoluteJoint` (Hinge) qui relie la Base et le Bras.
 - Ajouter un mécanisme de tir :
   - Soit un ressort (`SpringJoint`).
   - Soit un moteur sur le pivot (`MotorModel`).
@@ -87,8 +87,8 @@
   inset: 7pt,
   stroke: 0.5pt + gray,
   [*Critère*], [*Points*],
-  [**Intégration Moteur :** La simulation tourne à 60fps, les objets ne passent pas à travers le sol.], [7 pts],
-  [**Stacking :** Le mur de briques est stable au repos (ne tremble pas).], [7 pts],
-  [**Mécanisme (Joints) :** La catapulte fonctionne physiquement (pas d'animation pré-calculée).], [7 pts],
-  [**Gameplay :** On peut tirer et détruire le mur.], [9 pts],
+  [*Intégration Moteur :* La simulation tourne à 60fps, les objets ne passent pas à travers le sol.], [7 pts],
+  [*Stacking :* Le mur de briques est stable au repos (ne tremble pas).], [7 pts],
+  [*Mécanisme (Joints) :* La catapulte fonctionne physiquement (pas d'animation pré-calculée).], [7 pts],
+  [*Gameplay :* On peut tirer et détruire le mur.], [9 pts],
 )
