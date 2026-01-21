@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TP Session 10 - Système Solaire (RK4 & HDR)</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        canvas { display: block; }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'jsm/controls/OrbitControls.js';
+        import { GUI } from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
+        import { RGBELoader } from 'jsm/loaders/RGBELoader.js'; // Import pour le HDR
+
+        // --- Configuration Physique ---
+        const G = 100;
+        const SUN_MASS = 3330; 
+        const UA_SCALE = 18;
+
+        const DATA = {
+            mercury: { mass: 0.055, dist: 0.39, color: 0xAAAAAA, size: 0.4, name: "Mercure" },
+            venus:   { mass: 0.815, dist: 0.72, color: 0xFFCC33, size: 0.9, name: "Vénus" },
+            earth:   { mass: 1.000, dist: 1.00, color: 0x2277FF, size: 1.0, name: "Terre" },
+            mars:    { mass: 0.107, dist: 1.52, color: 0xFF4422, size: 0.5, name: "Mars" },
+            jupiter: { mass: 317.8, dist: 5.20, color: 0xDDAA88, size: 3.0, name: "Jupiter" },
+            saturne: { mass: 95.2,  dist: 9.54, color: 0xCCBB99, size: 2.5, name: "Saturne" }
+        };
+
+        let camera, scene, renderer, controls;
+        let planets = [];
+
+        const params = {
+            timeScale: 0.05,
+            showTrails: true,
+            reset: resetSimulation
+        };
+
+        init();
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 3000);
+            camera.position.set(0, 150, 250);
+            let totalDays = 0;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            // --- Configuration HDR & Rendu ---
+            renderer.toneMapping = THREE.ACESFilmicToneMapping; // Rendu plus cinématographique
+            renderer.toneMappingExposure = 1.0;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            
+            document.body.appendChild(renderer.domElement);
+
+            // Chargement de l'HDR
+            const rgbeLoader = new RGBELoader();
+            rgbeLoader.load('./textures/space.hdr', function (texture) {
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                scene.background = texture;    // Le fond
+                scene.environment = texture;   // L'éclairage ambiant sur les objets
+            });
+
+            const sunLight = new THREE.PointLight(0xffffff, 2, 1);
+            scene.add(sunLight);
+            // On baisse l'AmbientLight car l'HDR fournit déjà une lumière ambiante
+            scene.add(new THREE.AmbientLight(0xffffff, .1);
+
+            createSun();
+            createPlanets();
+            setupGUI();
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            window.addEventListener('resize', onResize);
+            renderer.setAnimationLoop(animate);
+        }
+
+        function createSun() {
+            const geo = new THREE.SphereGeometry(2, 32, 32);
+            // Matériau émissif pour que le soleil brille même avec l'HDR
+            const mat = new THREE.MeshStandardMaterial({ 
+                emissive: 0xFFCC00, 
+                emissiveIntensity: .01,
+                color: 0xFFCC00 
+            });
+            scene.add(new THREE.Mesh(geo, mat));
+        }
+
+        function createPlanets() {
+            Object.keys(DATA).forEach(key => {
+                const d = DATA[key];
+                const distWorld = d.dist * UA_SCALE;
+                // v = sqrt(G * Msoleil / r) pour une orbite circulaire
+                const vOrbit = Math.sqrt((G * SUN_MASS) / distWorld);
+
+                const mesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(d.size * 1.5, 24, 24),
+                    new THREE.MeshStandardMaterial({ 
+                        color: d.color,
+                        metalness: 0.2,
+                        roughness: 0.6 
+                    })
+                );
+
+                const trailMat = new THREE.LineBasicMaterial({ color: d.color, transparent: true, opacity: 0.3 });
+                const trailMesh = new THREE.Line(new THREE.BufferGeometry(), trailMat);
+                scene.add(trailMesh);
+                scene.add(mesh);
+
+                planets.push({
+                    mesh: mesh,
+                    mass: d.mass,
+                    pos: new THREE.Vector3(distWorld, 0, 0),
+                    vel: new THREE.Vector3(0, 0, -vOrbit),
+                    trailPoints: [],
+                    trailMesh: trailMesh
+                });
+            });
+        }
+
+        function getAcceleration(position) {
+            const dir = new THREE.Vector3().subVectors(new THREE.Vector3(0,0,0), position);
+            const r2 = dir.lengthSq();
+            if (r2 < 10) return new THREE.Vector3(0,0,0);
+            const fMag = (G * SUN_MASS) / r2;
+            return dir.normalize().multiplyScalar(fMag);
+        }
+
+        // on utilise Runge-Kutta 4 pour intégrer l'équation de la physique
+        function updatePhysicsRK4(p, dt) {
+            const x0 = p.pos.clone();
+            const v0 = p.vel.clone();
+
+            const a1 = getAcceleration(x0);
+            const k1_v = a1.multiplyScalar(dt);
+            const k1_x = v0.clone().multiplyScalar(dt);
+
+            const x2 = x0.clone().add(k1_x.clone().multiplyScalar(0.5));
+            const a2 = getAcceleration(x2);
+            const v2 = v0.clone().add(k1_v.clone().multiplyScalar(0.5));
+            const k2_v = a2.multiplyScalar(dt);
+            const k2_x = v2.multiplyScalar(dt);
+
+            const x3 = x0.clone().add(k2_x.clone().multiplyScalar(0.5));
+            const a3 = getAcceleration(x3);
+            const v3 = v0.clone().add(k2_v.clone().multiplyScalar(0.5));
+            const k3_v = a3.multiplyScalar(dt);
+            const k3_x = v3.multiplyScalar(dt);
+
+            const x4 = x0.clone().add(k3_x);
+            const a4 = getAcceleration(x4);
+            const v4 = v0.clone().add(k3_v);
+            const k4_v = a4.multiplyScalar(dt);
+            const k4_x = v4.multiplyScalar(dt);
+
+            const final_v = k1_v.add(k2_v.multiplyScalar(2)).add(k3_v.multiplyScalar(2)).add(k4_v).divideScalar(6);
+            const final_x = k1_x.add(k2_x.multiplyScalar(2)).add(k3_x.multiplyScalar(2)).add(k4_x).divideScalar(6);
+
+            p.vel.add(final_v);
+            p.pos.add(final_x);
+        }
+
+        function animate() {
+            const dt = 0.016 * params.timeScale;
+
+            planets.forEach(p => {
+                updatePhysicsRK4(p, dt);
+                p.mesh.position.copy(p.pos);
+                if (params.showTrails) {
+                    p.trailPoints.push(p.pos.clone());
+                    if (p.trailPoints.length > 1000) p.trailPoints.shift();
+                    p.trailMesh.geometry.setFromPoints(p.trailPoints);
+                }
+            });
+            renderer.render(scene, camera);
+        }
+
+        function resetSimulation() {
+            planets.forEach(p => {
+                scene.remove(p.mesh);
+                scene.remove(p.trailMesh);
+            });
+            planets = [];
+            createPlanets();
+        }
+
+        function setupGUI() {
+            const gui = new GUI();
+            gui.add(params, 'timeScale', 0.004, .15).name('Vitesse Simulation');
+            gui.add(params, 'showTrails').name('Trajectoires');
+            gui.add(params, 'reset').name('Reset');
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>
