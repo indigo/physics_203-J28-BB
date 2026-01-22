@@ -24,13 +24,13 @@
 #title()
 
 #tip-box(title: "Contexte")[
-  Ce TP se déroule sur deux séances (Session 12 et 13).
+  Ce TP se déroule sur deux semaines (Session 12-15).
   L'objectif est d'abandonner notre moteur "maison" pour utiliser un moteur professionnel (*Rapier* avec Three.js ou *Box2D* avec Raylib).
   
   Vous allez construire un jeu de siège/destruction physique.
 ]
 
-#heading(level: 1)[Partie A : Intégration & RigidBodies (Session 12)]
+#heading(level: 1)[Partie A : Intégration & RigidBodies (Session 12-13)]
 
 #definition-box(title: "Objectif de la séance")[
   Mettre en place le moteur physique et simuler une scène statique qui s'effondre.
@@ -39,6 +39,7 @@
 #heading(level: 2)[1. Setup du Projet]
 - Créer un projet vide (Vite + Three.js ou C++ Raylib).
 - Installer la librairie physique (`npm install @dimforge/rapier3d-compat` ou lien Box2D).
+- On peut aussi simplement récupérer la librairie par http depuis le script.
 - Initialiser le `PhysicsWorld` avec une gravité de $(0, -9.81, 0)$.
 
 #heading(level: 2)[2. Le Sol et les Murs (Statics)]
@@ -51,13 +52,13 @@
 - Générer un mur de briques (ex: 10x10 caisses empilées).
 - *Défi :* Ajuster la friction pour que le mur tienne debout mais s'effondre si on le pousse.
 
-#important-box(title: "Livrable Soir 1")[
+#important-box(title: "Livrable Semaine 1")[
   Une scène avec un sol et un mur de briques stable. Si on fait tomber une grosse sphère dessus (depuis le code), le mur doit s'effondrer de manière réaliste.
 ]
 
 #pagebreak()
 
-#heading(level: 1)[Partie B : Joints & Destruction (Session 13)]
+#heading(level: 1)[Partie B : Joints & Destruction (Session 14-15)]
 
 #definition-box(title: "Objectif de la séance")[
   Ajouter du gameplay : une arme de siège (Catapulte ou Trébuchet) et de l'interaction.

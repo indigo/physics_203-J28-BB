@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Demo Rapier.js - Balle Tombante</title>
+    <title>Demo Rapier.js 3D - Cube Tombant</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -10,13 +10,12 @@
     </style>
 </head>
 <body>
-    <!-- Configuration des imports modernes -->
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.172.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.172.0/examples/jsm/",
-                "@dimforge/rapier2d-compat": "https://unpkg.com/@dimforge/rapier2d-compat@0.12.0/rapier.es.js",
+                "three": "https://unpkg.com/three@0.182.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.182.0/examples/jsm/",
+                "@dimforge/rapier3d-compat": "https://unpkg.com/@dimforge/rapier3d-compat@0.12/rapier.es.js",
                 "lil-gui": "https://unpkg.com/lil-gui@0.20.0/dist/lil-gui.esm.min.js"
             }
         }
@@ -25,40 +24,31 @@
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import RAPIER from '@dimforge/rapier2d-compat';
+        import RAPIER from '@dimforge/rapier3d-compat';
         import { GUI } from 'lil-gui';
 
-        // --- Variables Globales ---
-        let camera, scene, renderer, controls;
-        let clock = new THREE.Clock();
-
-        // Objets Three.js
+        let camera, scene, renderer, controls, clock;
         let groundMesh_three, dynamicBoxMesh_three;
-
-        // Objets Rapier
-        let world_rapier;
-        let dynamicBoxBody_rapier;
+        let world_rapier, dynamicBoxBody_rapier;
         
-        // Paramètres de simulation (accessibles via GUI)
         const simParams = {
             gravityY: -9.81,
             boxSize: 0.5,
             boxInitialY: 4.0,
             boxMass: 1.0,
             boxRestitution: 0.7,
-            groundY: -0.0,
+            groundY: 0.0,
             groundSizeX: 10.0,
             groundSizeZ: 10.0,
             groundRestitution: 0.5,
             reset: function() { resetSimulation(); }
         };
 
-        // --- Initialisation ---
         async function init() {
-            // 1. Initialisation de Rapier (WASM)
+            // 1. Initialisation Rapier 3D
             try {
                 await RAPIER.init();
-                console.log("✅ Rapier.js (WASM) chargé.");
+                console.log("✅ Rapier 3D (WASM) chargé.");
             } catch (e) {
                 console.error("❌ Erreur Rapier:", e);
                 return;
@@ -69,7 +59,7 @@
             scene.background = new THREE.Color(0x202020);
 
             camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(0, 2, 8);
+            camera.position.set(5, 5, 8); // Vue en diagonale pour bien voir la 3D
 
             const ambient = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
             scene.add(ambient);
@@ -77,8 +67,6 @@
             const light = new THREE.DirectionalLight(0xffffff, 2.0);
             light.position.set(5, 10, 7);
             light.castShadow = true;
-            light.shadow.mapSize.width = 1024;
-            light.shadow.mapSize.height = 1024;
             scene.add(light);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -91,62 +79,61 @@
             controls.target.set(0, 1, 0);
             controls.update();
 
-            // 3. Création du monde physique et visuel
             resetSimulation();
-
-            // 4. Interface GUI
             setupGUI();
 
-            // 5. Boucle de rendu
             window.addEventListener('resize', onWindowResize, false);
             renderer.setAnimationLoop(animate);
         }
 
-        // --- Gestion Physique ---
         function createPhysicsWorld() {
-            // Nettoyage de l'ancien monde pour éviter les fuites de mémoire
-            if (world_rapier) {
-                world_rapier.free(); 
-            }
+            if (world_rapier) world_rapier.free();
 
-            const gravity = { x: 0.0, y: simParams.gravityY };
+            // CORRECTION 1: Gravité avec X, Y, Z
+            const gravity = { x: 0.0, y: simParams.gravityY, z: 0.0 };
             world_rapier = new RAPIER.World(gravity);
 
-            // A. Le Sol (Statique)
+            // --- SOL ---
             const groundDesc = RAPIER.RigidBodyDesc.fixed()
                 .setTranslation(0.0, simParams.groundY, 0.0);
             const groundBody = world_rapier.createRigidBody(groundDesc);
             
-            const groundColliderDesc = RAPIER.ColliderDesc.cuboid(simParams.groundSizeX / 2, 0.01)
-                .setRestitution(simParams.groundRestitution);
+            // CORRECTION 2: Cuboid prend (hx, hy, hz) en 3D
+            const groundColliderDesc = RAPIER.ColliderDesc.cuboid(
+                simParams.groundSizeX / 2, 
+                0.1, 
+                simParams.groundSizeZ / 2
+            ).setRestitution(simParams.groundRestitution);
             world_rapier.createCollider(groundColliderDesc, groundBody);
 
-            // B. La Boîte (Dynamique)
-            // Note: En 2D Rapier, rotation = float. En 3D = Quaternion. Ici on utilise Rapier2D Compat.
+            // --- BOITE ---
+            // CORRECTION 3: setTranslation avec Z
             const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
-                .setTranslation(0.0, simParams.boxInitialY)
-                .setCanSleep(false); // Empêche l'objet de s'endormir pour la démo
+                .setTranslation(0.0, simParams.boxInitialY, 0.0)
+                .setCanSleep(false);
             
             dynamicBoxBody_rapier = world_rapier.createRigidBody(bodyDesc);
 
-            const colliderDesc = RAPIER.ColliderDesc.cuboid(simParams.boxSize, simParams.boxSize)
-                .setRestitution(simParams.boxRestitution)
-                .setMass(simParams.boxMass);
+            // CORRECTION 4: Cuboid avec Z
+            const colliderDesc = RAPIER.ColliderDesc.cuboid(
+                simParams.boxSize, 
+                simParams.boxSize, 
+                simParams.boxSize
+            )
+            .setRestitution(simParams.boxRestitution)
+            .setMass(simParams.boxMass);
             world_rapier.createCollider(colliderDesc, dynamicBoxBody_rapier);
         }
 
-        // --- Gestion Visuelle ---
         function createVisuals() {
-            // Nettoyage
             if (groundMesh_three) scene.remove(groundMesh_three);
             if (dynamicBoxMesh_three) scene.remove(dynamicBoxMesh_three);
 
             // Sol
             const floorMat = new THREE.MeshStandardMaterial({ color: 0x445566, metalness: 0.2, roughness: 0.5 });
-            const floorGeo = new THREE.PlaneGeometry(simParams.groundSizeX, simParams.groundSizeZ);
+            const floorGeo = new THREE.BoxGeometry(simParams.groundSizeX, 0.2, simParams.groundSizeZ); // Boite visuelle au lieu de plane
             groundMesh_three = new THREE.Mesh(floorGeo, floorMat);
-            groundMesh_three.rotation.x = -Math.PI / 2;
-            groundMesh_three.position.y = 0;//imParams.groundY;
+            groundMesh_three.position.y = simParams.groundY;
             groundMesh_three.receiveShadow = true;
             scene.add(groundMesh_three);
 
@@ -161,22 +148,18 @@
         function resetSimulation() {
             createPhysicsWorld();
             createVisuals();
-            clock.start();
-            console.log("🔄 Simulation réinitialisée");
         }
 
         function animate() {
             if (world_rapier && dynamicBoxMesh_three) {
-                // Step Physique (60Hz par défaut)
                 world_rapier.step();
 
-                // Synchronisation Rapier -> Three.js
-                // Attention: Rapier2D travaille en x,y. Three.js en x,y,z.
                 const pos = dynamicBoxBody_rapier.translation();
-                const rot = dynamicBoxBody_rapier.rotation();
+                const rot = dynamicBoxBody_rapier.rotation(); // Retourne un Quaternion {x,y,z,w} en 3D
 
-                dynamicBoxMesh_three.position.set(pos.x, pos.y, 0);
-                dynamicBoxMesh_three.rotation.z = rot;
+                // CORRECTION 5: Synchronisation 3D
+                dynamicBoxMesh_three.position.copy(pos);
+                dynamicBoxMesh_three.quaternion.copy(rot);
             }
 
             controls.update();
@@ -185,20 +168,15 @@
 
         function setupGUI() {
             const gui = new GUI({ title: "Paramètres" });
-            
             gui.add(simParams, 'reset').name('♻️ Réinitialiser');
 
-            const folderPhys = gui.addFolder('Physique Rapier');
-            folderPhys.add(simParams, 'gravityY', -20.0, 0.0).name('Gravité Y').onChange(resetSimulation);
-            folderPhys.add(simParams, 'boxMass', 0.1, 10.0).name('Masse Boîte').onChange(resetSimulation);
-            folderPhys.add(simParams, 'boxRestitution', 0.0, 1.2).name('Rebond (0-1.2)').onChange(resetSimulation);
-            folderPhys.add(simParams, 'groundRestitution', 0.0, 1.2).name('Rebond Sol').onChange(resetSimulation);
+            const folderPhys = gui.addFolder('Physique');
+            folderPhys.add(simParams, 'gravityY', -20.0, 0.0).onChange(resetSimulation);
+            folderPhys.add(simParams, 'boxRestitution', 0.0, 1.2).onChange(resetSimulation);
             
             const folderScene = gui.addFolder('Scène');
-            folderScene.add(simParams, 'boxSize', 0.1, 1.0).name('Taille Boîte').onChange(resetSimulation);
-            folderScene.add(simParams, 'boxInitialY', 0.0, 10.0).name('Hauteur Initiale').onChange(resetSimulation);
-            
-            folderPhys.open();
+            folderScene.add(simParams, 'boxSize', 0.1, 1.0).onChange(resetSimulation);
+            folderScene.add(simParams, 'boxInitialY', 0.0, 10.0).onChange(resetSimulation);
         }
 
         function onWindowResize() {
@@ -207,7 +185,6 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // Lancement
         init();
     </script>
 </body>

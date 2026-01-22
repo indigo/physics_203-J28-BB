@@ -50,9 +50,9 @@ Tout commence par la création d'un monde. C'est le conteneur qui gère la gravi
 Un objet physique est séparé en deux concepts : le *Corps* (sa physique) et la *Forme* (sa collision).
 
 #definition-box(title: "Les 3 Types de Corps")[
-  1. **Dynamic :** Soumis aux forces et aux collisions (Caisse, Balle, Joueur). C'est ce que nous avons fait jusqu'ici ($ F=m.a $).
-  2. **Static :** Masse infinie, vitesse nulle. Ne bouge JAMAIS (Sol, Mur, Maison).
-  3. **Kinematic :** "Téléguidé". Il a une vitesse infinie (il écrase tout) mais n'est pas affecté par les forces. On contrôle sa position manuellement (Plateforme mobile, Ascenseur).
+  1. *Dynamic :* Soumis aux forces et aux collisions (Caisse, Balle, Joueur). C'est ce que nous avons fait jusqu'ici: $ bold(F=m.a) $.
+  2. *Static (ou Fixed) :* Masse infinie, vitesse nulle. Ne bouge JAMAIS (Sol, Mur, Maison).
+  3. *Kinematic :* "Téléguidé". Il a une aussi une masse infinie (il écrase tout) mais n'est pas affecté par les forces. On contrôle sa position manuellement soit par une animation, mais pas par la physique(Plateforme mobile, Ascenseur).
 ]
 
 #example(title: "Création d'un corps")[
@@ -71,8 +71,8 @@ Un objet physique est séparé en deux concepts : le *Corps* (sa physique) et la
 Le RigidBody n'a pas de forme. C'est juste un point avec une masse. Pour qu'il rebondisse, il faut lui attacher un *Collider*.
 
 #important-box(title: "Collider vs Mesh")[
-  - **Mesh (Three.js) :** Ce qu'on *voit* (milliers de triangles, textures).
-  - **Collider (Rapier) :** Ce qui *touche* (formes primitives simples).
+  - *Mesh (Three.js) :* Ce qu'on *voit* (milliers de triangles, textures).
+  - *Collider (Rapier) :* Ce qui *touche* (formes primitives simples).
   
   *Règle d'or :* Toujours utiliser la forme la plus simple possible pour le collider (Sphère, Cube, Capsule) pour les performances.
 ]
