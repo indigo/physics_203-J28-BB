@@ -146,3 +146,65 @@ Puisque nous travaillons parfois avec le Web, le choix du moteur est critique ca
   
   - *NON* pour un jeu commercial complexe. La gestion des collisions 3D (Mesh vs Mesh), l'optimisation spatiale (Octrees/BVH) et la stabilité numérique sont des années de travail que PhysX ou Rapier vous offrent gratuitement.
 ]
+
+
+#heading(level: 1)[6. Anatomie d'un Moteur : Architecture ECS]
+
+#tip-box(title: "Pourquoi cette complexité ?")[
+  Dans notre moteur Verlet, nous avions un `vector<Ball>`. C'est simple, mais ça passe mal à l'échelle (cache CPU, mémoire).
+
+  Les moteurs modernes (Rapier, Jolt, Unity ECS) séparent strictement les *Données* de la *Logique*. 
+  
+    #figure(
+    image("../images/Moteur.svg", width: 80%),
+    caption: [Séparation des données et de la logique, un seul objectif: prédire le futur],
+    )
+
+  Pour être efficace, ils utilisent une architecture basée sur les *Entités, Composants et Systèmes* (ECS).
+  En effet, ces architectures *permettent d'optimiser et paralléliser* les taches répétitives simples sur de nombreux objets (comme le calcul de la physique).
+]
+
+#heading(level: 2)[A. Les Structures de Données (The Sets)]
+Au lieu d'avoir un objet `Ball` qui contient tout (Position, Forme, Masse), Rapier découpe les données dans des conteneurs spécialisés appelés **Sets**. On n'accède pas aux objets par pointeur, mais par **Handle** (un ID unique).
+
+- **RigidBody Set :** Stocke la position $(x,y,z)$, la vitesse et les forces. C'est "l'âme" physique de l'objet.
+- **Collider Set :** Stocke la forme géométrique (Cube, Sphère) et les matériaux (Friction, Restitution). C'est le "corps" tangible.
+- **Joint Set :** Stocke les contraintes (Ressorts, Pivots) qui relient deux RigidBodies.
+
+#important-box(title: "Generational Arena")[
+  Ces "Sets" ne sont pas de simples tableaux. Ce sont des *Generational Arenas*.
+  Si vous supprimez l'objet ID `42` et en créez un nouveau qui prend la place `42`, le moteur ajoute une "génération" (ex: `42_v2`).
+  Cela empêche les bugs où une balle continuerait de suivre un objet détruit.
+]
+
+#heading(level: 2)[B. Le Pipeline Physique]
+La fonction `step()` n'est pas magique. Elle orchestre plusieurs étapes critiques séquentiellement :
+
+1.  *Gravity & Forces :* Application de la gravité globale et des forces utilisateur.
+2.  *Broad Phase :* Trouve grossièrement qui *pourrait* toucher qui (AABB).
+3.  *Narrow Phase :* Calcule précisément les points de contact.
+4.  *Island Manager (Optimization) :*
+    Le moteur regroupe les objets qui se touchent en "Îles".
+    - Si tous les objets d'une île ont une vitesse quasi-nulle, l'île entière est mise en **Sleep** (Sommeil).
+    - Le moteur cesse de les calculer jusqu'à ce qu'une force extérieure les réveille.
+    - *C'est le secret pour afficher 10 000 caisses à 60 FPS.*
+5.  *Solver :* Résout les contraintes (empêcher la pénétration, gérer les joints).
+6.  *Integration :* Met à jour les positions finales (Euler: $P = P + V dot d"t"$).
+
+#heading(level: 2)[C. Les Pipelines Spécialisés]
+
+Tous les calculs ne servent pas à faire bouger des objets. Parfois, on veut juste poser une question au monde.
+
+#definition-box(title: "Query Pipeline (Interrogation)")[
+  C'est le module utilisé pour le Gameplay (comme notre tir de catapulte). Il utilise les structures accélérées (BVH - Bounding Volume Hierarchy) pour répondre instantanément à :
+  - **Raycasting :** "Qu'est-ce qui est sous ma souris ?"
+  - **Shapecasting :** "Si j'avance ce personnage ici, va-t-il cogner un mur ?"
+  - **Point Projection :** "Quel est l'objet le plus proche de cette bombe ?"
+]
+
+#heading(level: 2)[D. Événements et Hooks]
+
+Parfois, la physique ne suffit pas, il faut du code de jeu.
+
+- **Physics Hooks :** Permet de filtrer les collisions *avant* qu'elles ne soient résolues (ex: "Les gentils traversent les gentils, mais cognent les méchants").
+- **Event Handler :** Notifie le jeu *après* une collision (ex: "Si la balle touche le mur à haute vitesse -> Jouer un son 'Boom'").
