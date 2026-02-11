@@ -156,7 +156,7 @@ Puisque nous travaillons parfois avec le Web, le choix du moteur est critique ca
   Les moteurs modernes (Rapier, Jolt, Unity ECS) séparent strictement les *Données* de la *Logique*. 
   
     #figure(
-    image("../images/Moteur.svg", width: 80%),
+    image("../images/Moteur.svg", width: 90%),
     caption: [Séparation des données et de la logique, un seul objectif: prédire le futur],
     )
 

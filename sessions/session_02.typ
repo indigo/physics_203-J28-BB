@@ -1,10 +1,28 @@
-#set text(font: "Georgia", lang: "fr", size: 12pt)
-#set page(paper: "us-letter", margin: 3cm)
-#set par(justify: true)
+#import "@preview/theorion:0.4.1": *
+#import cosmos.rainbow: *
+#show: show-theorion
 
-= Session 2 : Cinématique 2D et Mouvement de Projectile
+#set document(
+  author: ("Richard Rispoli"),
+  title: [Session 2 : Cinématique 2D et Mouvement de Projectile]
+)
 
-== Résumé de la Session :
+#show title: set align(right)
+#show title: set block(below: 1.2em)
+#show title: set text(weight: "bold", size: 1.2em, fill: rgb("#406372"))
+
+#set page(
+  paper: "us-letter",
+  margin: 2cm,
+  header: align(right + horizon, "Physics 203 - Commercial Engines"),
+)
+
+#set text(font: "Georgia", lang: "fr", size: 11pt)
+#show heading: set text(weight: "bold", size: 1.1em, fill: rgb("#005F87"))
+
+#title()
+
+#heading(level: 1)[Résumé de la Session :]
 
 - *Introduction à la cinématique :*
   - Branche de la mécanique qui décrit le mouvement des objets sans considérer les causes du mouvement (les forces).
@@ -26,7 +44,7 @@ Lorsque la vitesse est constante, le point se déplace à vitesse constante en l
 Lorsque l'accélération est constante, la vitesse augmente constamment,
 le point se déplace de plus en plus vite.
 
-=== 1. Introduction et Rappels
+#heading(level: 1)[1. Introduction et Rappels]
 
 - *Brève révision des vecteurs :*
   - Rappel de la définition d'un vecteur comme une quantité possédant une magnitude (longueur, norme) et une direction.
@@ -38,7 +56,7 @@ le point se déplace de plus en plus vite.
 
 
 
-=== 2. Position en 2D
+#heading(level: 1)[2. Position en 2D]
 
 - *Vecteur Position :*
   - Pour décrire la localisation d'un point (ou d'un objet considéré comme un point) dans un plan bidimensionnel, nous utilisons le *vecteur position*, noté $arrow(r)$ (ou parfois $arrow(s)$ ou $arrow(x)$).
@@ -76,7 +94,7 @@ le point se déplace de plus en plus vite.
 
 - *Démo cinématique :* Pour visualiser les concepts de cinématique, consultez la démo : #link("../scenes/session02.html")[file:../scenes/session02.html]
  
-=== 3. Vitesse en 2D 
+#heading(level: 1)[3. Vitesse en 2D]
 
 - *Vitesse Moyenne :*
 
@@ -135,7 +153,7 @@ le point se déplace de plus en plus vite.
     $
   - La composante horizontale $v_x$ reste constante, tandis que la composante verticale $v_y$ diminue linéairement. Par exemple, avec $v_(0x) = 10$ m/s, $v_(0y) = 20$ m/s et $g = 9.81$ m/s², à $t = 2$ s : $arrow(v) = vec(10, 20 - 9.81*2) = vec(10, 0.38)$ m/s. Le projectile est quasiment à son apogée.
 
-=== 4. Accélération en 2D
+#heading(level: 1)[4. Accélération en 2D]
 
 - *Accélération Moyenne :*
   - Si la vitesse d'un objet change au cours du temps, l'objet est en train d'accélérer.
@@ -189,7 +207,7 @@ $ arrow(v)(t) = vec(v_x, v_y) $
 
 
 
-== *2. Mouvement circulaire uniforme :*
+#heading(level: 2)[2. Mouvement circulaire uniforme :]
 
   *Position :*
   
