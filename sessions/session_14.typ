@@ -25,7 +25,7 @@ Le rôle du solveur est de trouver les forces (ou impulsions) minimales à appli
 
 #heading(level: 2)[2. Rappel de "L'Impulsion" (La méthode Rapier)]
 
-Au lieu de calculer des forces (qui sont instables sur un pas de temps discret), les moteurs modernes calculent des *Impulsions*. Comme nous l'avons fait avec notre moteur Eurler.
+Au lieu de calculer des forces (qui sont instables sur un pas de temps discret), les moteurs modernes calculent des *Impulsions*. Comme nous l'avons fait avec notre moteur Euler.
 Une impulsion $J$ est un changement immédiat de vitesse.
 
 $ v_"finale" = v_"initiale" + J / m $

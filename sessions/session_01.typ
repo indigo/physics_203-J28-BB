@@ -6,35 +6,19 @@
 
 #set document(
   author: ("Richard Rispoli"),
+  title: [Session 1 : Géométrie et Calcul Vectoriel]
 )
 #show title: set align(right)
 #show title: set block(below: 1.2em)
-#show title: set text(
-  weight: "bold", 
-  size: 1em, 
-  fill: rgb("#406372")
-)
+#show title: set text(weight: "bold", size: 1.2em, fill: rgb("#406372"))
 #set page(
   paper: "us-letter",
   margin: 2cm,
-  header: align(
-    right + horizon,
-    // Retrieve the document
-    // element's title property.
-    "Physics 203-j28-BB - " + context document.author.at(0),
-  ),
+  header: align(right + horizon, "Physics 203 - Commercial Engines"),
 )
 
-#set text(
-  font: "Georgia",
-  lang: "fr",
-  size: 12pt
-)
-#show heading: set text(
-  weight: "bold", 
-  size: 1em, 
-  fill: rgb("#005F87")
-)
+#set text(font: "Georgia", lang: "fr", size: 11pt)
+#show heading: set text(weight: "bold", size: 1.1em, fill: rgb("#005F87"))
 // Style des boîtes
 #let section-box(title, body) = {
   rect(
@@ -50,9 +34,6 @@
   ]
 }
 
-
-
-#set document(title: [Géométrie et Calcul Vectoriel])
 
 #title()
 
