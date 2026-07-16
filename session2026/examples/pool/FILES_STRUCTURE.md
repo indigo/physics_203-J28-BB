@@ -220,8 +220,8 @@ TOTAL                   1404      49 KB     100%
 
 ### CDN (déjà inclus dans index.html)
 ```html
-Three.js   : https://unpkg.com/three@0.160.0
-lil-gui    : https://unpkg.com/lil-gui@0.19.1
+Three.js   : https://unpkg.com/three@0.185.1
+lil-gui    : https://unpkg.com/lil-gui@0.20.0
 ```
 
 ### Aucune installation requise !

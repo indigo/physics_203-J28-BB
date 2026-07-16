@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'jsm/controls/OrbitControls.js';
 // Import de la GUI (lil-gui remplace dat.gui dans les projets modernes Three.js)
-import { GUI } from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
+import { GUI } from 'https://unpkg.com/lil-gui@0.20.0/dist/lil-gui.esm.min.js';
 
 // --- Configuration ---
 const WALL_X = 8; 

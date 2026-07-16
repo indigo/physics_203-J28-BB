@@ -11,8 +11,8 @@
     <script type="importmap">
     {
         "imports": {
-            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            "three": "https://unpkg.com/three@0.185.1/build/three.module.js",
+            "jsm/": "https://unpkg.com/three@0.185.1/examples/jsm/"
         }
     }
     </script>
@@ -22,7 +22,7 @@
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'jsm/controls/OrbitControls.js';
-        import { GUI } from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
+        import { GUI } from 'https://unpkg.com/lil-gui@0.20.0/dist/lil-gui.esm.min.js';
         import { RGBELoader } from 'jsm/loaders/RGBELoader.js'; // Import pour le HDR
 
         // --- Configuration Physique ---
@@ -77,7 +77,7 @@
             const sunLight = new THREE.PointLight(0xffffff, 2, 1);
             scene.add(sunLight);
             // On baisse l'AmbientLight car l'HDR fournit déjà une lumière ambiante
-            scene.add(new THREE.AmbientLight(0xffffff, .1);
+            scene.add(new THREE.AmbientLight(0xffffff, .1));
 
             createSun();
             createPlanets();
