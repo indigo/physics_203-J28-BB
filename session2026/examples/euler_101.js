@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'jsm/controls/OrbitControls.js';
+import { GUI } from 'https://unpkg.com/lil-gui@0.20.0/dist/lil-gui.esm.min.js';
 
 // --- Variables Globales ---
 let camera, scene, renderer;
@@ -9,15 +10,23 @@ const clock = new THREE.Clock();
 // --- Paramètres Physique ---
 const mass = 1.0;
 const radius = 0.5;
-const restitution = 0.8; // "Rebondissance" (1 = infini, 0 = pas de rebond)
 const gravity = new THREE.Vector3(0, -9.81, 0);
 
 // État initial de la balle (Position, Vitesse)
 // On utilise des vecteurs mutables pour ne pas recréer d'objets (Memory friendly)
-const position = new THREE.Vector3(-5, 5, 0); // En haut à gauche
-const velocity = new THREE.Vector3(3, 0, 0);  // Lance vers la droite
+const startPosition = new THREE.Vector3(-5, 5, 0); // En haut à gauche
+const startVelocity = new THREE.Vector3(3, 0, 0);  // Lance vers la droite
+const position = startPosition.clone();
+const velocity = startVelocity.clone();
 const force = new THREE.Vector3();
 const acceleration = new THREE.Vector3();
+
+// --- Paramètres GUI ---
+const params = {
+    restitution: 0.8, // "Rebondissance" (1 = infini, 0 = pas de rebond)
+    timeScale: 1.0,   // 1.0 = temps réel, 0 = pause
+    reset: resetSimulation
+};
 
 init();
 
@@ -53,12 +62,29 @@ function init() {
     // 4. Création de la Balle Physique
     createBall();
 
-    // 5. Contrôles
+    // 5. GUI
+    setupGUI();
+
+    // 6. Contrôles
     new OrbitControls(camera, renderer.domElement);
     window.addEventListener('resize', onWindowResize, false);
     
-    // 6. Lancement
+    // 7. Lancement
     renderer.setAnimationLoop(animate);
+}
+
+function setupGUI() {
+    const gui = new GUI();
+    gui.add(params, 'restitution', 0.0, 1.0, 0.05).name('Restitution (e)');
+    gui.add(params, 'timeScale', 0.0, 2.0).name('⏱️ Vitesse Temps');
+    gui.add(params, 'reset').name('♻️ RESET');
+}
+
+function resetSimulation() {
+    position.copy(startPosition);
+    velocity.copy(startVelocity);
+    force.set(0, 0, 0);
+    acceleration.set(0, 0, 0);
 }
 
 function createBall() {
@@ -105,7 +131,7 @@ function updatePhysics(dt) {
         position.y = radius;
         
         // Inversion de la vitesse (Rebond)
-        velocity.y = -velocity.y * restitution;
+        velocity.y = -velocity.y * params.restitution;
         
         // (Optionnel) Frottement au sol pour arrêter de glisser à la fin
         velocity.x *= 0.95; 
@@ -138,7 +164,7 @@ function animate() {
 
     // On limite dt pour éviter des bugs si on change d'onglet
     // (Si dt est trop grand, la simulation explose)
-    const safeDt = Math.min(dt, 0.1);
+    const safeDt = Math.min(dt, 0.1) * params.timeScale;
 
     updatePhysics(safeDt);
     updateVisuals();
