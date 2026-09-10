@@ -4,7 +4,7 @@ import { GUI } from 'https://unpkg.com/lil-gui@0.20.0/dist/lil-gui.esm.min.js';
 import RAPIER from 'rapier';
 
 // ============================================================
-//  SESSION 13 — Three.js + Rapier (moteur physique commercial)
+//  SESSION 14 — Three.js + Rapier (moteur physique commercial)
 //
 //  Comparez avec les sessions précédentes : PLUS UNE SEULE
 //  ligne d'intégration, de détection de collision ou d'impulsion.
