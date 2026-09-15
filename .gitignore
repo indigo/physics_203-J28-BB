@@ -7,3 +7,6 @@ quiz/solution.typ
 session2026/cours/session10b_quiz_solution.pdf
 session2026/examples/session12_solar_solution.html
 session2026/examples/session12_solar_solution.js
+
+# HDR textures are large binaries; keep them out of git
+*.hdr
