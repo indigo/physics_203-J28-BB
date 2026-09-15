@@ -309,7 +309,7 @@ function setupGUI() {
         // endormis doivent réagir (sinon ils dorment avec l'ancienne loi !)
         for (const { body } of pairs) body.wakeUp();
     });
-    gui.add(params, 'cannonSpeed', 10, 150, 1).name('🚀 Vitesse du boulet');
+    gui.add(params, 'cannonSpeed', 10, 1500, 1).name('🚀 Vitesse du boulet');
     gui.add(params, 'ccd').name('👁️ CCD (anti-tunneling)');
     gui.add(params, 'restitution', 0, 1, 0.05).name('🏀 Rebond');
     gui.add(params, 'friction', 0, 1, 0.05).name('🧊 Friction');
