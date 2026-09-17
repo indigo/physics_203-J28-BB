@@ -533,5 +533,5 @@
 ]
 
 #tip-box(title: "La suite")[
-  Session 16 : *contraintes avancées* et *IK* (cinématique inverse). On réutilisera les joints d'aujourd'hui pour construire des *chaînes articulées* (bras robot, ragdoll) et résoudre la question : « quels angles faut-il donner aux articulations pour que le pied atteigne ce point ? » Puis le TP véhicules (S17) — où les joints de roue (revolute + moteur) feront avancer une voiture.
+  Session 16 : *character controller* et *IK* (cinématique inverse). On pilotera un personnage — capsule cinématique, raycast au sol, glissement le long des murs — puis on résoudra la question : « quels angles faut-il donner aux articulations pour que le pied atteigne ce point ? » Puis le TP véhicules (S17) — où les joints de roue (revolute + moteur) feront avancer une voiture.
 ]

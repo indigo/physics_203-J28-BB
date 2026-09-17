@@ -383,7 +383,7 @@ function createPiston() {
     world.createCollider(
         RAPIER.ColliderDesc.cuboid(0.35, 0.35, 0.35)
             .setDensity(1.0)
-            .setFriction(0.1)    // glissant comme la pente
+            .setFriction(0.01)    // glissant comme la pente
             .setRestitution(0.1),
         boxBody
     );
@@ -392,7 +392,7 @@ function createPiston() {
 }
 
 function applyPistonLimits() {
-    pistonJoint.setLimits(-1.5, params.pistonLimit);
+    pistonJoint.setLimits(-0.5, params.pistonLimit);
 }
 
 function applyPistonMotor() {

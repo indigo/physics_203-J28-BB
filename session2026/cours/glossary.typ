@@ -153,7 +153,11 @@
 ]
 
 #definition-box(title: "Série de Taylor")[
-  Décomposition d'une trajectoire en ses dérivées successives. Euler ne garde que le premier terme (ordre 1).
+  Toute trajectoire peut être décomposée en une série de Taylor: 
+  
+  $x(t + Delta t) = x(t) + x'(t) dot Delta t + frac(1, 2!) x''(t) dot (Delta t)^2 + frac(1, 3!) x'''(t) dot (Delta t)^3 + ...$
+  
+  Euler ne garde que le premier terme (ordre 1).
 ]
 
 #definition-box(title: "Intégration de Verlet")[
@@ -284,10 +288,6 @@
   Prolonge GJK après collision : étend le simplex vers la vraie frontière de $A minus B$ pour obtenir la *normale* et la *profondeur* de pénétration.
 ]
 
-#definition-box(title: "Contact")[
-  Triple (point $P$, normale $hat(n)$, profondeur $d$) produit par la Narrow Phase, prêt pour la Response.
-]
-
 // ============================================================
 #heading(level: 2)[Position Based Dynamics (Session 8)]
 // ============================================================
@@ -312,53 +312,6 @@
   Contrainte diagonale (en plus des horizontales/verticales) qui empêche un tissu de se déformer en losange.
 ]
 
-// ============================================================
-#heading(level: 2)[Moteur de particules (Session 9)]
-// ============================================================
-
-#definition-box(title: "Moteur de particules")[
-  Système qui simule un grand nombre de petits objets éphémères (pluie, feu, fumée) : émettre, mettre à jour, recycler.
-]
-
-#definition-box(title: "Object Pool")[
-  Allouer une fois un tableau fixe de particules et *recycler* les mortes plutôt que d'en créer/détruire. Zéro allocation pendant le jeu — évite les saccades du garbage collector.
-]
-
-#definition-box(title: "Emitter")[
-  Génère des particules à un taux donné, avec une forme (point, cône, sphère) qui contrôle position et direction initiales.
-]
-
-#definition-box(title: "Drag linéaire (Stokes)")[
-  Force opposée à la vitesse, *proportionnelle* à $v$ : $arrow(F) = -k dot arrow(v)$. Pour petits objets lents dans un fluide visqueux.
-]
-
-#definition-box(title: "Drag quadratique")[
-  Force opposée à la vitesse, *proportionnelle* à $v^2$ : $arrow(F) = -k dot ||v|| dot arrow(v)$. Pour gouttes de pluie, projectiles rapides.
-]
-
-#definition-box(title: "Flottabilité (Archimède)")[
-  Force vers le haut égale au poids du fluide déplacé. Fusionnée en "gravité effective" $g_"eff" = g(1 - rho_"air"/rho_"particule")$ : négative = tombe, positive = monte.
-]
-
-#definition-box(title: "Turbulence")[
-  Force pseudo-aléatoire (sinusoïdes déphasées) qui fait onduler la fumée et crépiter le feu. $O(1)$ par particule.
-]
-
-#definition-box(title: "BufferGeometry")[
-  Conteneur de tableaux bruts (`Float32Array`) envoyés directement au GPU. Un attribut par propriété (position, color, size, alpha). Le seul format performant pour des milliers de particules.
-]
-
-#definition-box(title: "THREE.Points")[
-  Objet Three.js qui dessine chaque sommet comme un *point* (carré de pixels) via `gl_PointSize`. Un seul draw call pour des milliers de particules.
-]
-
-#definition-box(title: "Vertex shader")[
-  Programme GPU qui calcule la position projetée de chaque sommet (et, pour les points, la taille `gl_PointSize`).
-]
-
-#definition-box(title: "Fragment shader")[
-  Programme GPU qui calcule la couleur finale de chaque pixel (ici : disque doux via `discard` + `smoothstep` sur `gl_PointCoord`).
-]
 
 // ============================================================
 #heading(level: 2)[Rotations & Corps rigides (Session 10)]
