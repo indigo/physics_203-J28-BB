@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="860" height="520" viewBox="0 0 860 520" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <text x="430" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">Squelette UE5 &#8594; Ragdoll : mapping des os</text>
+
+  <!-- ============ PANNEAU GAUCHE : squelette ============ -->
+  <text x="215" y="52" text-anchor="middle" font-size="13" font-weight="bold" fill="#555">Squelette (61 os, ~1 m)</text>
+
+  <!-- Spine -->
+  <line x1="340" y1="226" x2="340" y2="174" stroke="#7a8a9a" stroke-width="10" stroke-linecap="round"/>
+  <line x1="340" y1="174" x2="340" y2="118" stroke="#7a8a9a" stroke-width="9" stroke-linecap="round"/>
+  <line x1="340" y1="118" x2="340" y2="76" stroke="#7a8a9a" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="340" cy="98" r="16" fill="#9aa8b8" stroke="#5a6a7a" stroke-width="1.5"/>
+
+  <!-- Arms -->
+  <line x1="352" y1="142" x2="376" y2="146" stroke="#7a8a9a" stroke-width="7" stroke-linecap="round"/>
+  <line x1="376" y1="146" x2="416" y2="182" stroke="#7a8a9a" stroke-width="7" stroke-linecap="round"/>
+  <line x1="416" y1="182" x2="448" y2="214" stroke="#7a8a9a" stroke-width="6" stroke-linecap="round"/>
+  <line x1="328" y1="142" x2="304" y2="146" stroke="#7a8a9a" stroke-width="7" stroke-linecap="round"/>
+  <line x1="304" y1="146" x2="264" y2="182" stroke="#7a8a9a" stroke-width="7" stroke-linecap="round"/>
+  <line x1="264" y1="182" x2="228" y2="214" stroke="#7a8a9a" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Legs -->
+  <line x1="360" y1="234" x2="380" y2="326" stroke="#7a8a9a" stroke-width="10" stroke-linecap="round"/>
+  <line x1="380" y1="326" x2="392" y2="414" stroke="#7a8a9a" stroke-width="9" stroke-linecap="round"/>
+  <line x1="392" y1="414" x2="404" y2="442" stroke="#7a8a9a" stroke-width="6" stroke-linecap="round"/>
+  <line x1="324" y1="234" x2="300" y2="326" stroke="#7a8a9a" stroke-width="10" stroke-linecap="round"/>
+  <line x1="300" y1="326" x2="288" y2="414" stroke="#7a8a9a" stroke-width="9" stroke-linecap="round"/>
+  <line x1="288" y1="414" x2="280" y2="442" stroke="#7a8a9a" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- ===== JOINTS : BALL (bleu) ===== -->
+  <g fill="#2b6cb0" stroke="#1a4a80" stroke-width="1.5">
+    <circle cx="340" cy="118" r="7"/>   <!-- cou -->
+    <circle cx="376" cy="146" r="7"/>   <!-- epaule L -->
+    <circle cx="304" cy="146" r="7"/>   <!-- epaule R -->
+    <circle cx="360" cy="234" r="7"/>   <!-- hanche L -->
+    <circle cx="324" cy="234" r="7"/>   <!-- hanche R -->
+  </g>
+
+  <!-- ===== JOINTS : HINGE (rouge) ===== -->
+  <g fill="#c53030" stroke="#8a1a1a" stroke-width="1.5">
+    <circle cx="416" cy="182" r="7"/>   <!-- coude L -->
+    <circle cx="264" cy="182" r="7"/>   <!-- coude R -->
+    <circle cx="380" cy="326" r="7"/>   <!-- genou L -->
+    <circle cx="300" cy="326" r="7"/>   <!-- genou R -->
+    <circle cx="392" cy="414" r="6"/>   <!-- cheville L -->
+    <circle cx="288" cy="414" r="6"/>   <!-- cheville R -->
+  </g>
+
+  <!-- ===== JOINTS : LIMITES (gris) ===== -->
+  <g fill="#b0b8c0" stroke="#7a828a" stroke-width="1.5">
+    <circle cx="340" cy="210" r="6"/>
+    <circle cx="340" cy="198" r="6"/>
+    <circle cx="340" cy="174" r="6"/>
+  </g>
+
+  <!-- Noms des os -->
+  <g font-size="10" fill="#444">
+    <text x="364" y="102">head</text>
+    <text x="364" y="126">neck_01</text>
+    <text x="360" y="170">spine_03</text>
+    <text x="360" y="192">spine_02</text>
+    <text x="360" y="214">spine_01</text>
+    <text x="388" y="140">clavicle_l</text>
+    <text x="384" y="166">upperarm_l</text>
+    <text x="424" y="180">lowerarm_l</text>
+    <text x="454" y="218">hand_l</text>
+    <text x="216" y="140">clavicle_r</text>
+    <text x="238" y="166">upperarm_r</text>
+    <text x="176" y="180">lowerarm_r</text>
+    <text x="150" y="218">hand_r</text>
+    <text x="370" y="262">thigh_l</text>
+    <text x="392" y="344">calf_l</text>
+    <text x="402" y="428">foot_l</text>
+    <text x="268" y="262">thigh_r</text>
+    <text x="250" y="344">calf_r</text>
+    <text x="248" y="428">foot_r</text>
+  </g>
+
+  <!-- Leader pour pelvis -->
+  <line x1="300" y1="256" x2="330" y2="238" stroke="#aaa" stroke-width="1"/>
+  <text x="296" y="260" font-size="10" fill="#444" text-anchor="end">pelvis</text>
+
+  <!-- Légende -->
+  <g font-size="11" fill="#333">
+    <circle cx="60" cy="480" r="7" fill="#2b6cb0" stroke="#1a4a80" stroke-width="1.5"/>
+    <text x="74" y="484">Ball joint (cône limité)</text>
+    <circle cx="260" cy="480" r="7" fill="#c53030" stroke="#8a1a1a" stroke-width="1.5"/>
+    <text x="274" y="484">Hinge (1 axe)</text>
+    <circle cx="400" cy="480" r="6" fill="#b0b8c0" stroke="#7a828a" stroke-width="1.5"/>
+    <text x="414" y="484">Limité (spine)</text>
+  </g>
+
+  <!-- ============ PANNEAU DROIT : mapping ============ -->
+  <line x1="530" y1="60" x2="530" y2="440" stroke="#ddd" stroke-width="1"/>
+  <text x="690" y="52" text-anchor="middle" font-size="13" font-weight="bold" fill="#555">Mapping ragdoll</text>
+
+  <g font-size="11" fill="#333">
+    <!-- Bandeau -->
+    <rect x="550" y="66" width="270" height="22" fill="#eef2f6"/>
+    <text x="560" y="81" font-weight="bold">Os</text>
+    <text x="700" y="81" font-weight="bold">Corps</text>
+    <text x="770" y="81" font-weight="bold">Joint</text>
+
+    <!-- Lignes -->
+    <g fill="#333">
+      <text x="560" y="106">head</text><text x="700" y="106">capsule</text><text x="770" y="106">ball</text>
+      <text x="560" y="128">neck_01</text><text x="700" y="128">&#8212;</text><text x="770" y="128">ball</text>
+      <text x="560" y="150">spine_03</text><text x="700" y="150">capsule</text><text x="770" y="150">limit&#233;</text>
+      <text x="560" y="172">spine_02</text><text x="700" y="172">&#8212;</text><text x="770" y="172">limit&#233;</text>
+      <text x="560" y="194">spine_01</text><text x="700" y="194">&#8212;</text><text x="770" y="194">limit&#233;</text>
+      <text x="560" y="216">pelvis</text><text x="700" y="216">box</text><text x="770" y="216">&#8212;</text>
+      <text x="560" y="238">upperarm_l/r</text><text x="700" y="238">capsule</text><text x="770" y="238">ball</text>
+      <text x="560" y="260">lowerarm_l/r</text><text x="700" y="260">capsule</text><text x="770" y="260">hinge</text>
+      <text x="560" y="282">hand_l/r</text><text x="700" y="282">box</text><text x="770" y="282">&#8212;</text>
+      <text x="560" y="304">thigh_l/r</text><text x="700" y="304">capsule</text><text x="770" y="304">ball</text>
+      <text x="560" y="326">calf_l/r</text><text x="700" y="326">capsule</text><text x="770" y="326">hinge</text>
+      <text x="560" y="348">foot_l/r</text><text x="700" y="348">box</text><text x="770" y="348">ball</text>
+    </g>
+  </g>
+
+  <!-- Ignorés -->
+  <rect x="550" y="370" width="270" height="60" fill="#fff4f4" stroke="#f0c0c0" stroke-width="1"/>
+  <text x="560" y="388" font-size="11" font-weight="bold" fill="#a02020">Ignor&#233;s dans le ragdoll :</text>
+  <text x="560" y="405" font-size="10" fill="#a02020">&#8226; 30 os de doigts (index, middle, pinky, ring, thumb)</text>
+  <text x="560" y="420" font-size="10" fill="#a02020">&#8226; 8 os twist (upperarm_twist, lowerarm_twist, ...)</text>
+</svg>

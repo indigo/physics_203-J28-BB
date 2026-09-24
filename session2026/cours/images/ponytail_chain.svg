@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="820" height="420" viewBox="0 0 820 420" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <defs>
+    <marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2b6cb0"/>
+    </marker>
+    <marker id="arrR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c53030"/>
+    </marker>
+  </defs>
+
+  <text x="410" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">Cha&#238;ne PBD &#8212; le ponytail</text>
+
+  <!-- ===== PANNEAU 1 : la cha&#238;ne ===== -->
+  <text x="200" y="54" text-anchor="middle" font-size="13" font-weight="bold" fill="#555">1. Cha&#238;ne de points</text>
+
+  <!-- T&#234;te (cercle) -->
+  <circle cx="200" cy="110" r="38" fill="#d8e0e8" stroke="#7a8a9a" stroke-width="1.5"/>
+  <text x="200" y="115" text-anchor="middle" font-size="11" fill="#555">head</text>
+
+  <!-- Point d'attache (pinn&#233;) -->
+  <circle cx="228" cy="140" r="8" fill="#c53030" stroke="#8a1a1a" stroke-width="2"/>
+  <text x="250" y="138" font-size="10" fill="#c53030" font-weight="bold">pinn&#233; (suit la t&#234;te)</text>
+
+  <!-- Cha&#238;ne : points successifs -->
+  <g stroke="#2b6cb0" stroke-width="4" stroke-linecap="round">
+    <line x1="228" y1="140" x2="248" y2="190"/>
+    <line x1="248" y1="190" x2="262" y2="242"/>
+    <line x1="262" y1="242" x2="268" y2="294"/>
+    <line x1="268" y1="294" x2="266" y2="344"/>
+  </g>
+
+  <!-- Points -->
+  <g fill="#2b6cb0" stroke="#1a4a80" stroke-width="1.5">
+    <circle cx="248" cy="190" r="7"/>
+    <circle cx="262" cy="242" r="7"/>
+    <circle cx="268" cy="294" r="7"/>
+    <circle cx="266" cy="344" r="7"/>
+  </g>
+
+  <!-- Labels des points -->
+  <g font-size="10" fill="#2b6cb0">
+    <text x="258" y="194">p1</text>
+    <text x="272" y="246">p2</text>
+    <text x="278" y="298">p3</text>
+    <text x="276" y="348">p4</text>
+  </g>
+
+  <!-- Distance constraint labels -->
+  <g font-size="9" fill="#666">
+    <text x="196" y="170">d</text>
+    <text x="212" y="222">d</text>
+    <text x="228" y="274">d</text>
+    <text x="240" y="326">d</text>
+  </g>
+
+  <!-- Gravity arrow -->
+  <line x1="320" y1="200" x2="320" y2="270" stroke="#2b6cb0" stroke-width="2" marker-end="url(#arrG)"/>
+  <text x="330" y="240" font-size="11" fill="#2b6cb0" font-weight="bold">g</text>
+
+  <!-- Stiffness gradient indicator -->
+  <g font-size="10" fill="#444">
+    <text x="60" y="175">raide</text>
+    <text x="60" y="340">souple</text>
+  </g>
+  <line x1="100" y1="170" x2="100" y2="345" stroke="#999" stroke-width="1"/>
+  <circle cx="100" cy="170" r="3" fill="#444"/>
+  <circle cx="100" cy="345" r="3" fill="#fff" stroke="#444" stroke-width="1"/>
+
+  <!-- ===== PANNEAU 2 : la r&#233;solution ===== -->
+  <line x1="420" y1="60" x2="420" y2="390" stroke="#ddd" stroke-width="1"/>
+  <text x="620" y="54" text-anchor="middle" font-size="13" font-weight="bold" fill="#555">2. R&#233;solution (PBD)</text>
+
+  <!-- Verlet step -->
+  <rect x="450" y="72" width="340" height="70" fill="#f4f8fc" stroke="#c0d4e8" stroke-width="1"/>
+  <text x="460" y="92" font-size="11" font-weight="bold" fill="#2b6cb0">&#201;tape 1 &#8212; Verlet (int&#233;gration)</text>
+  <text x="460" y="112" font-size="10" fill="#333">pos = pos + (pos - prev) &#215; damping + g &#215; dt&#178;</text>
+  <text x="460" y="130" font-size="10" fill="#666">Les points tombent sous la gravit&#233;, avec inertie</text>
+
+  <!-- Constraint step -->
+  <rect x="450" y="152" width="340" height="86" fill="#f4f8fc" stroke="#c0d4e8" stroke-width="1"/>
+  <text x="460" y="172" font-size="11" font-weight="bold" fill="#2b6cb0">&#201;tape 2 &#8212; Contraintes (&#215;4 it&#233;rations)</text>
+  <text x="460" y="192" font-size="10" fill="#333">pour chaque paire (pi, pi+1) :</text>
+  <text x="470" y="210" font-size="10" fill="#333">corriger la distance vers d</text>
+  <text x="460" y="228" font-size="10" fill="#666">Le point 0 est pinn&#233; &#8212; il ne bouge pas</text>
+
+  <!-- Convergence -->
+  <rect x="450" y="248" width="340" height="66" fill="#f4f8fc" stroke="#c0d4e8" stroke-width="1"/>
+  <text x="460" y="268" font-size="11" font-weight="bold" fill="#2b6cb0">Pourquoi plusieurs it&#233;rations ?</text>
+  <text x="460" y="288" font-size="10" fill="#333">Corriger p1-p2 d&#233;place p1, ce qui casse p0-p1.</text>
+  <text x="460" y="304" font-size="10" fill="#333">It&#233;rer propage la correction le long de la cha&#238;ne.</text>
+
+  <!-- Warning -->
+  <rect x="450" y="324" width="340" height="62" fill="#fff8f0" stroke="#e8c8a0" stroke-width="1"/>
+  <text x="460" y="344" font-size="11" font-weight="bold" fill="#a06020">&#192; ajouter pour le r&#233;alisme</text>
+  <text x="460" y="362" font-size="10" fill="#a06020">&#8226; Contraintes d'angle (anti-repliement)</text>
+  <text x="460" y="378" font-size="10" fill="#a06020">&#8226; Collision avec le torse et les &#233;paules</text>
+</svg>
