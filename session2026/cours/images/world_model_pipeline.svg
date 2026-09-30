@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="830" height="410" viewBox="0 0 830 410" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+<defs><marker id="arrB" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2b6cb0"/></marker><marker id="arrR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c53030"/></marker><marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2f855a"/></marker><marker id="arrO" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dd6b20"/></marker><marker id="arrK" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7a8a9a"/></marker></defs>
+<rect width="830" height="410" fill="white"/>
+<text x="415.0" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">Modèle du monde : remplacer le solveur par un réseau</text>
+<rect x="20" y="96" width="175" height="96" rx="10" fill="#ebf4ff" stroke="#2b6cb0" stroke-width="1.6"/>
+<text x="107.0" y="124.0" text-anchor="middle" font-size="13" fill="#2b6cb0" font-weight="bold" font-style="normal">Moteur physique</text>
+<text x="107.0" y="146.0" text-anchor="middle" font-size="10" fill="#555" font-weight="normal" font-style="normal">Rapier — vérité terrain</text>
+<text x="107.0" y="172.0" text-anchor="middle" font-size="10" fill="#555" font-weight="normal" font-style="normal"></text>
+<rect x="225" y="96" width="175" height="96" rx="10" fill="#f0fff4" stroke="#2f855a" stroke-width="1.6"/>
+<text x="312.0" y="124.0" text-anchor="middle" font-size="13" fill="#2f855a" font-weight="bold" font-style="normal">Jeu de données</text>
+<text x="312.0" y="146.0" text-anchor="middle" font-size="10" fill="#555" font-weight="normal" font-style="normal">(s, a, s′) enregistrés</text>
+<text x="312.0" y="172.0" text-anchor="middle" font-size="10" fill="#555" font-weight="normal" font-style="normal"></text>
+<rect x="430" y="96" width="175" height="96" rx="10" fill="#fffaf0" stroke="#dd6b20" stroke-width="1.6"/>
+<text x="517.0" y="124.0" text-anchor="middle" font-size="13" fill="#dd6b20" font-weight="bold" font-style="normal">Entraînement</text>
+<text x="517.0" y="146.0" text-anchor="middle" font-size="10" fill="#555" font-weight="normal" font-style="normal">apprendre f(s,a) ≈ s′</text>
+<text x="517.0" y="172.0" text-anchor="middle" font-size="10" fill="#555" font-weight="normal" font-style="normal"></text>
+<rect x="635" y="96" width="175" height="96" rx="10" fill="#fff5f5" stroke="#c53030" stroke-width="1.6"/>
+<text x="722.0" y="124.0" text-anchor="middle" font-size="13" fill="#c53030" font-weight="bold" font-style="normal">Modèle appris</text>
+<text x="722.0" y="146.0" text-anchor="middle" font-size="10" fill="#555" font-weight="normal" font-style="normal">un réseau, pas un solveur</text>
+<text x="722.0" y="172.0" text-anchor="middle" font-size="10" fill="#555" font-weight="normal" font-style="normal"></text>
+<line x1="195" y1="144" x2="223" y2="144" stroke="#7a8a9a" stroke-width="2.5" marker-end="url(#arrK)"/>
+<line x1="400" y1="144" x2="428" y2="144" stroke="#7a8a9a" stroke-width="2.5" marker-end="url(#arrK)"/>
+<line x1="605" y1="144" x2="633" y2="144" stroke="#7a8a9a" stroke-width="2.5" marker-end="url(#arrK)"/>
+<text x="87.0" y="224.0" text-anchor="middle" font-size="10" fill="#555" font-weight="normal" font-style="normal">coûteux : contacts, itérations</text>
+<text x="628.0" y="224.0" text-anchor="middle" font-size="10" fill="#555" font-weight="normal" font-style="normal">rapide : quelques multiplications</text>
+<path d="M 722 196 C 722 268, 480 268, 480 300" fill="none" stroke="#c53030" stroke-width="2.5" marker-end="url(#arrR)"/>
+<path d="M 480 300 C 480 330, 700 330, 700 300" fill="none" stroke="#c53030" stroke-width="2.5" marker-end="url(#arrR)"/>
+<rect x="430" y="292" width="270" height="56" rx="10" fill="#fff5f5" stroke="#c53030" stroke-width="1.6"/>
+<text x="565.0" y="316.0" text-anchor="middle" font-size="11" fill="#c53030" font-weight="bold" font-style="normal">Rollout : le modèle se nourrit</text>
+<text x="565.0" y="334.0" text-anchor="middle" font-size="11" fill="#c53030" font-weight="normal" font-style="normal">de ses propres prédictions</text>
+<path d="M 700 300 C 700 246, 722 240, 722 200" fill="none" stroke="#c53030" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrR)"/>
+<text x="565.0" y="372.0" text-anchor="middle" font-size="11" fill="#555" font-weight="normal" font-style="italic">C'est ici que l'erreur s'accumule — pas à l'entraînement.</text>
+<text x="565.0" y="390.0" text-anchor="middle" font-size="11" fill="#555" font-weight="normal" font-style="italic">Un modèle excellent sur un pas peut diverger sur mille.</text>
+</svg>
